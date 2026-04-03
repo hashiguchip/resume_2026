@@ -1,0 +1,15 @@
+pre-commit:
+  commands:
+    biome-check:
+      glob: "*.{js,ts,jsx,tsx,json,css}"
+      run: npx @biomejs/biome check --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+
+commit-msg:
+  commands:
+    conventional-commit:
+      run: |
+        head -1 "{1}" | grep -qE '^(feat|fix|refactor|style|docs|chore|test): .+' || {
+          echo "ERROR: Commit message must match '<type>: <description>'"
+          echo "  types: feat, fix, refactor, style, docs, chore, test"
+          exit 1
+        }
