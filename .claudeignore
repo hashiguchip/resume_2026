@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build output
+.next/
+out/
+
+# Lock file (large, not useful for AI)
+package-lock.json
+
+# IDE
+.idea/
+
+# Binary assets
+public/*.svg
+public/favicon.ico
+
+# Environment variables
+.env*

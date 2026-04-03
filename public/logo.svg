@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 44" fill="none">
+  <!-- アイコン: 人物シルエット入りブリーフケース -->
+  <g>
+    <!-- ブリーフケース本体 -->
+    <rect x="0" y="11" width="32" height="23" rx="4" fill="#0066CC"/>
+    <!-- ブリーフケースの取手 -->
+    <path d="M11 11V8.5C11 5.46 13.46 3 16.5 3h0C19.54 3 22 5.46 22 8.5V11" stroke="#0066CC" stroke-width="3" stroke-linecap="round"/>
+    <!-- 人物: 頭 -->
+    <circle cx="16" cy="19" r="3.2" fill="white"/>
+    <!-- 人物: 肩 -->
+    <path d="M9.5 30C9.5 26.4 12.4 23.5 16 23.5C19.6 23.5 22.5 26.4 22.5 30" fill="white"/>
+  </g>
+  <!-- テキスト: H・R -->
+  <g fill="#0066CC">
+    <!-- H -->
+    <rect x="42" y="8" width="5" height="28" rx="1"/>
+    <rect x="62" y="8" width="5" height="28" rx="1"/>
+    <rect x="47" y="18" width="15" height="5" rx="1"/>
+    <!-- ・(ドット) -->
+    <circle cx="79" cy="22" r="3"/>
+    <!-- R -->
+    <rect x="90" y="8" width="5" height="28" rx="1"/>
+    <path d="M95 8h12c5.5 0 10 4.5 10 10s-4.5 10-10 10H95V23h12c2.76 0 5-2.24 5-5s-2.24-5-5-5H95V8z" fill="#0066CC"/>
+    <path d="M104 23l13 13h-7l-12-13h6z" fill="#0066CC"/>
+  </g>
+  <!-- サブテキスト: キャリア -->
+  <rect x="126" y="33" width="0" height="0"/>
+</svg>
