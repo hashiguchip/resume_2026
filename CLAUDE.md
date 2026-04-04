@@ -30,7 +30,8 @@ src/
 │   ├── sections/     # ページセクション (JobHeader, Skills, Projects, etc.)
 │   └── layout/       # レイアウト (Header, Footer, SectionNav, Breadcrumb)
 ├── constants/        # 定数定義
-├── libs/             # 内部ライブラリ (global-modal)
+├── libs/             # 内部ライブラリ (http, global-modal, analytics)
+├── services/         # 外部サービスとの通信層 (API Layer)
 └── stores/           # Zustand ストア
 ```
 
@@ -57,6 +58,12 @@ src/
 
 - `create<T>()(...)` パターンで型安全に定義
 - ストアファイルは `src/stores/` に配置
+
+### Environment Variables
+
+- `process.env` を直接参照しない。`src/env.ts` の `env` オブジェクト経由でアクセスする
+- 新しい環境変数を追加する場合は `src/env.ts` に zod スキーマとともに登録する
+- 例外: `next.config.ts` での `NODE_ENV` 参照など、env.ts より前に評価されるファイル
 
 ### Commit Message (Conventional Commits)
 
