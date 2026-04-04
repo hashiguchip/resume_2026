@@ -42,7 +42,7 @@ argument-hint: "{PR number}"
 ]
 ```
 
-#### Agent 1: 規約準拠チェック
+#### Agent 1: 規約準拠チェック（model: "sonnet"）
 
 - `CLAUDE.md` を Read してプロジェクト規約を取得
 - 変更ファイルごとに以下をチェック:
@@ -66,7 +66,7 @@ argument-hint: "{PR number}"
   - デバッグコード（console.log 等）の残存
 - 必要に応じて関連ファイルを Read して前後の文脈を確認
 
-#### Agent 3: セキュリティ・diff 衛生
+#### Agent 3: セキュリティ・diff 衛生（model: "sonnet"）
 
 - セキュリティ:
   - ハードコードされた API キー・シークレット
