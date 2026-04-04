@@ -129,10 +129,7 @@ error / warning の指摘が **1件もない** 場合（info のみ or 指摘ゼ
 - `gh pr review $ARGUMENTS --comment --body "..."` で PR にレビューコメントを投稿:
 
 ```
-✅ AI Review Passed
-
-No errors or warnings found.
-🤖 Reviewed by Claude Code
+✅ No issues found.
 ```
 
 error / warning が **1件以上ある** 場合:
