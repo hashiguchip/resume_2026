@@ -48,7 +48,7 @@ export function ContactConfirmStep({ form, onBack, onComplete }: Props) {
     } catch (e) {
       const message = e instanceof Error ? e.message : "送信に失敗しました。時間をおいて再度お試しください。";
       setError(message);
-      trackContactSubmitError(message);
+      trackContactSubmitError("submission_failed");
     } finally {
       submittingRef.current = false;
       setSubmitting(false);
