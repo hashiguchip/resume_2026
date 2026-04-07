@@ -21,6 +21,7 @@ argument-hint: <ComponentName>
    - Server Component がデフォルト（`"use client"` は必要な場合のみ）
    - Props 型はコンポーネント直上に `type Props = { ... }` で定義
    - インポートは `@/*` エイリアスを使用
+   - Styling は `apps/web/CLAUDE.md` の Styling セクションに従う（`@theme` の token を default、arbitrary value は意図的な one-off のみ）
 
 3. 生成後に `npm run lint:fix` を実行してフォーマットを整える
 
