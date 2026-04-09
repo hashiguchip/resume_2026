@@ -1,32 +1,60 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/hashiguchip/resume_2026/apps/api/internal/repository"
 )
 
-const (
-	// echo -n "test" | shasum -a 256
-	testHash = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
-	testJSON = `{"rate":"1円/h","billingHours":"実稼働","trialRate":"1円/h","trialNote":"お試し","patterns":[]}`
-)
+const testCode = "test"
 
-func setupMux(t *testing.T) http.Handler {
+// stubUserRepo は in-memory な UserRepository 実装。
+// testCode のみを valid として受け付ける。
+type stubUserRepo struct{}
+
+func (stubUserRepo) FindByCode(_ context.Context, code string) (*repository.User, error) {
+	if code == testCode {
+		return &repository.User{ID: 1, Label: "test", Code: code}, nil
+	}
+	return nil, repository.ErrUserNotFound
+}
+
+// stubRepo は in-memory な PortfolioRepository 実装 (テスト専用)。
+type stubRepo struct {
+	portfolio *repository.Portfolio
+}
+
+func (s *stubRepo) GetPortfolioForUser(_ context.Context, _ int) (*repository.Portfolio, error) {
+	if s.portfolio == nil {
+		return &repository.Portfolio{}, nil
+	}
+	return s.portfolio, nil
+}
+
+func setupServer(t *testing.T, repo repository.PortfolioRepository) http.Handler {
 	t.Helper()
-	t.Setenv("AUTH_CODE_HASHES", testHash)
-	t.Setenv("PRICING_JSON", testJSON)
-	t.Setenv("CORS_ORIGINS", "http://localhost:3000")
-
-	// Re-create the mux with the current env (mirrors main() setup)
-	return buildMux()
+	if repo == nil {
+		repo = &stubRepo{}
+	}
+	cfg := &config{
+		CORSOrigins: []string{"http://localhost:3000"},
+	}
+	h, err := newServer(cfg, repo, stubUserRepo{})
+	if err != nil {
+		t.Fatalf("newServer: %v", err)
+	}
+	return h
 }
 
 func TestHealthz(t *testing.T) {
-	mux := setupMux(t)
-	req := httptest.NewRequest("GET", "/healthz", nil)
+	h := setupServer(t, nil)
+	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	w := httptest.NewRecorder()
-	mux.ServeHTTP(w, req)
+	h.ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", w.Code)
@@ -36,74 +64,95 @@ func TestHealthz(t *testing.T) {
 	}
 }
 
-func TestPricingAuth(t *testing.T) {
-	mux := setupMux(t)
+func TestPortfolioAuth(t *testing.T) {
+	samplePortfolio := &repository.Portfolio{
+		Projects: []repository.Project{{ID: "p1", Title: "Sample"}},
+		Pricing:  repository.Pricing{Rate: "1円/h"},
+	}
 
 	t.Run("missing code", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/api/pricing", nil)
+		h := setupServer(t, &stubRepo{portfolio: samplePortfolio})
+		req := httptest.NewRequest(http.MethodGet, "/api/portfolio", nil)
 		w := httptest.NewRecorder()
-		mux.ServeHTTP(w, req)
+		h.ServeHTTP(w, req)
 		if w.Code != http.StatusUnauthorized {
 			t.Fatalf("expected 401, got %d", w.Code)
 		}
 	})
 
 	t.Run("invalid code", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/api/pricing", nil)
+		h := setupServer(t, &stubRepo{portfolio: samplePortfolio})
+		req := httptest.NewRequest(http.MethodGet, "/api/portfolio", nil)
 		req.Header.Set("X-Referral-Code", "wrong-code")
 		w := httptest.NewRecorder()
-		mux.ServeHTTP(w, req)
+		h.ServeHTTP(w, req)
 		if w.Code != http.StatusUnauthorized {
 			t.Fatalf("expected 401, got %d", w.Code)
 		}
 	})
 
 	t.Run("valid code", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/api/pricing", nil)
-		req.Header.Set("X-Referral-Code", "test")
+		h := setupServer(t, &stubRepo{portfolio: samplePortfolio})
+		req := httptest.NewRequest(http.MethodGet, "/api/portfolio", nil)
+		req.Header.Set("X-Referral-Code", testCode)
 		w := httptest.NewRecorder()
-		mux.ServeHTTP(w, req)
+		h.ServeHTTP(w, req)
 		if w.Code != http.StatusOK {
-			t.Fatalf("expected 200, got %d", w.Code)
+			t.Fatalf("expected 200, got %d (body=%s)", w.Code, w.Body.String())
 		}
-		if w.Body.String() != testJSON {
-			t.Fatalf("unexpected body: %s", w.Body.String())
+
+		var p repository.Portfolio
+		if err := json.Unmarshal(w.Body.Bytes(), &p); err != nil {
+			t.Fatalf("decode body: %v", err)
+		}
+		if len(p.Projects) == 0 {
+			t.Fatal("expected projects to be populated")
+		}
+		if p.Pricing.Rate == "" {
+			t.Fatal("expected pricing.rate to be populated")
 		}
 	})
 }
 
 func TestCORS(t *testing.T) {
-	mux := setupMux(t)
-
-	t.Run("preflight", func(t *testing.T) {
-		req := httptest.NewRequest("OPTIONS", "/api/pricing", nil)
+	t.Run("preflight allowed", func(t *testing.T) {
+		h := setupServer(t, nil)
+		req := httptest.NewRequest(http.MethodOptions, "/api/portfolio", nil)
 		req.Header.Set("Origin", "http://localhost:3000")
+		req.Header.Set("Access-Control-Request-Method", http.MethodGet)
 		w := httptest.NewRecorder()
-		mux.ServeHTTP(w, req)
+		h.ServeHTTP(w, req)
+
 		if w.Code != http.StatusOK {
 			t.Fatalf("expected 200, got %d", w.Code)
 		}
-		if w.Header().Get("Access-Control-Allow-Origin") != "http://localhost:3000" {
-			t.Fatal("missing CORS origin header")
+		if got := w.Header().Get("Access-Control-Allow-Origin"); got != "http://localhost:3000" {
+			t.Fatalf("expected Allow-Origin=http://localhost:3000, got %q", got)
+		}
+		if got := w.Header().Get("Access-Control-Allow-Headers"); got == "" {
+			t.Fatal("expected Allow-Headers to be set")
 		}
 	})
 
-	t.Run("disallowed origin", func(t *testing.T) {
-		req := httptest.NewRequest("OPTIONS", "/api/pricing", nil)
-		req.Header.Set("Origin", "http://evil.com")
+	t.Run("preflight disallowed origin", func(t *testing.T) {
+		h := setupServer(t, nil)
+		req := httptest.NewRequest(http.MethodOptions, "/api/portfolio", nil)
+		req.Header.Set("Origin", "http://evil.example.com")
+		req.Header.Set("Access-Control-Request-Method", http.MethodGet)
 		w := httptest.NewRecorder()
-		mux.ServeHTTP(w, req)
-		if w.Header().Get("Access-Control-Allow-Origin") != "" {
-			t.Fatal("should not set CORS header for disallowed origin")
+		h.ServeHTTP(w, req)
+
+		if got := w.Header().Get("Access-Control-Allow-Origin"); got != "" {
+			t.Fatalf("expected no Allow-Origin, got %q", got)
 		}
 	})
 }
 
 func TestNotFound(t *testing.T) {
-	mux := setupMux(t)
-	req := httptest.NewRequest("GET", "/unknown", nil)
+	h := setupServer(t, nil)
+	req := httptest.NewRequest(http.MethodGet, "/unknown", nil)
 	w := httptest.NewRecorder()
-	mux.ServeHTTP(w, req)
+	h.ServeHTTP(w, req)
 	if w.Code != http.StatusNotFound {
 		t.Fatalf("expected 404, got %d", w.Code)
 	}

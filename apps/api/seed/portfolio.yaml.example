@@ -1,0 +1,64 @@
+# 構造のみのサンプル seed (scope 縮小版)。
+#
+# 実データは個人情報を含むため、`apps/api/seed/portfolio.yaml` (SOPS 暗号化) に
+# 別途格納する。このファイルは平文で commit され、構造のリファレンスとして使う。
+#
+# 投入: `mise run seed:apply`
+# 編集: `sops apps/api/seed/portfolio.yaml`
+#
+# DB に置くのは「動的 / user 毎に異なる」データのみ:
+#   - projects: 職務経歴 (全員共通だが id を持つので DB の方が seed しやすい)
+#   - pricings: 料金プラン (user 毎に異なる)
+#   - users:    referral code holder (pricing_label で pricings を参照)
+#
+# Tech / Phase / FAQ / Benefit / Requirement / WorkCondition / PainPoint は
+# frontend の constants に直書きされており DB には載せない (固定コンテンツのため)。
+
+projects:
+  - id: project-sample-1
+    title: Sample Project A
+    period_start: 2024-01-01
+    period_end: 2025-03-31
+    team: 4名
+    role: PG
+    summary: |
+      sample summary text.
+      multi-line OK.
+    tech_ids: [go, postgres]
+    phase_ids: [development, operation]
+    display_order: 1
+  - id: project-sample-2
+    title: Sample Project B (進行中)
+    period_start: 2025-04-01
+    period_end: null  # null = 現在進行中
+    team: 6名
+    role: TL
+    summary: |
+      ongoing project sample.
+    tech_ids: [typescript, react]
+    phase_ids: [requirements, design, development]
+    display_order: 2
+
+pricings:
+  - label: standard
+    rate: 1円/h
+    billing_hours: 実稼働
+    trial_rate: 1円/h
+    trial_note: お試し期間あり
+    patterns:
+      - label: パターンA
+        trial_flex: 0
+        trial_period: 1ヶ月
+        regular_flex: 0
+        regular_period: 2ヶ月目〜
+        display_order: 1
+
+users:
+  # proto は橋口さん手元動作確認用の固定 referral code。実 seed にも必ず含める。
+  - label: proto
+    code: proto
+    pricing_label: standard
+  - label: sample
+    code: sample-referral-code
+    pricing_label: standard
+    # revoked_at: 2026-01-01T00:00:00Z  # 設定すると soft-delete 状態 (auth で 401)

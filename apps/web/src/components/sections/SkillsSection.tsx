@@ -1,26 +1,12 @@
 import { H2 } from "@/components/ui/H2";
+import { TECH_CATEGORY_LABELS, TECH_CATEGORY_ORDER, TECHS, type Tech } from "@/constants/tech";
 
-const SKILL_CATEGORIES = [
-  { label: "言語", items: ["TypeScript", "JavaScript", "PHP", "SQL"] },
-  {
-    label: "フロントエンド",
-    items: ["React", "Next.js", "Vue.js", "Nuxt.js", "Tailwind CSS", "Sass/SCSS", "Jest", "Vite"],
-  },
-  {
-    label: "バックエンド",
-    items: ["Laravel", "Symfony", "CakePHP", "CodeIgniter", "Zend Framework", "FuelPHP", "MySQL", "REST API"],
-  },
-  {
-    label: "インフラ・DevOps",
-    items: ["AWS", "Lambda", "CDK", "Docker", "GitHub Actions", "Vercel"],
-  },
-  {
-    label: "開発プロセス",
-    items: ["アジャイル", "スクラム", "ウォーターフォール"],
-  },
-  { label: "AI", items: ["Claude Code", "Cursor", "Codex", "Gemini"] },
-  { label: "その他", items: ["Git", "Figma", "Notion", "Slack"] },
-];
+const GROUPED: { category: (typeof TECH_CATEGORY_ORDER)[number]; items: Tech[] }[] = TECH_CATEGORY_ORDER.map(
+  (category) => ({
+    category,
+    items: TECHS.filter((t) => t.category === category),
+  }),
+).filter((g) => g.items.length > 0);
 
 export function SkillsSection() {
   return (
@@ -29,16 +15,18 @@ export function SkillsSection() {
         <H2>スキル・技術スタック</H2>
         <div className="rounded border border-neutral-300 bg-white p-5">
           <div className="space-y-3">
-            {SKILL_CATEGORIES.map((c) => (
-              <div key={c.label} className="flex flex-col gap-2 sm:flex-row sm:items-baseline">
-                <span className="w-[140px] shrink-0 font-bold text-[13px] text-neutral-900">{c.label}</span>
+            {GROUPED.map((g) => (
+              <div key={g.category} className="flex flex-col gap-2 sm:flex-row sm:items-baseline">
+                <span className="w-[140px] shrink-0 font-bold text-[13px] text-neutral-900">
+                  {TECH_CATEGORY_LABELS[g.category]}
+                </span>
                 <div className="flex flex-wrap gap-1.5">
-                  {c.items.map((s) => (
+                  {g.items.map((t) => (
                     <span
-                      key={s}
+                      key={t.id}
                       className="rounded-sm bg-neutral-100 px-2.5 py-1 text-neutral-800 text-xs ring-1 ring-neutral-200"
                     >
-                      {s}
+                      {t.label}
                     </span>
                   ))}
                 </div>
