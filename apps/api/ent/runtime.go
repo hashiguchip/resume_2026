@@ -3,91 +3,35 @@
 package ent
 
 import (
-	"github.com/hashiguchip/resume_2026/apps/api/ent/benefit"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/faqitem"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/painpoint"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/phase"
+	"time"
+
 	"github.com/hashiguchip/resume_2026/apps/api/ent/pricing"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/pricingpattern"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/project"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/requirement"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/schema"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/tech"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/workcondition"
+	"github.com/hashiguchip/resume_2026/apps/api/ent/user"
 )
 
 // The init function reads all schema descriptors with runtime code
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
-	benefitFields := schema.Benefit{}.Fields()
-	_ = benefitFields
-	// benefitDescTitle is the schema descriptor for title field.
-	benefitDescTitle := benefitFields[0].Descriptor()
-	// benefit.TitleValidator is a validator for the "title" field. It is called by the builders before save.
-	benefit.TitleValidator = benefitDescTitle.Validators[0].(func(string) error)
-	// benefitDescDescription is the schema descriptor for description field.
-	benefitDescDescription := benefitFields[1].Descriptor()
-	// benefit.DescriptionValidator is a validator for the "description" field. It is called by the builders before save.
-	benefit.DescriptionValidator = benefitDescDescription.Validators[0].(func(string) error)
-	// benefitDescDisplayOrder is the schema descriptor for display_order field.
-	benefitDescDisplayOrder := benefitFields[2].Descriptor()
-	// benefit.DefaultDisplayOrder holds the default value on creation for the display_order field.
-	benefit.DefaultDisplayOrder = benefitDescDisplayOrder.Default.(int)
-	faqitemFields := schema.FAQItem{}.Fields()
-	_ = faqitemFields
-	// faqitemDescQuestion is the schema descriptor for question field.
-	faqitemDescQuestion := faqitemFields[0].Descriptor()
-	// faqitem.QuestionValidator is a validator for the "question" field. It is called by the builders before save.
-	faqitem.QuestionValidator = faqitemDescQuestion.Validators[0].(func(string) error)
-	// faqitemDescAnswer is the schema descriptor for answer field.
-	faqitemDescAnswer := faqitemFields[1].Descriptor()
-	// faqitem.AnswerValidator is a validator for the "answer" field. It is called by the builders before save.
-	faqitem.AnswerValidator = faqitemDescAnswer.Validators[0].(func(string) error)
-	// faqitemDescDisplayOrder is the schema descriptor for display_order field.
-	faqitemDescDisplayOrder := faqitemFields[2].Descriptor()
-	// faqitem.DefaultDisplayOrder holds the default value on creation for the display_order field.
-	faqitem.DefaultDisplayOrder = faqitemDescDisplayOrder.Default.(int)
-	painpointFields := schema.PainPoint{}.Fields()
-	_ = painpointFields
-	// painpointDescTitle is the schema descriptor for title field.
-	painpointDescTitle := painpointFields[0].Descriptor()
-	// painpoint.TitleValidator is a validator for the "title" field. It is called by the builders before save.
-	painpoint.TitleValidator = painpointDescTitle.Validators[0].(func(string) error)
-	// painpointDescDescription is the schema descriptor for description field.
-	painpointDescDescription := painpointFields[1].Descriptor()
-	// painpoint.DescriptionValidator is a validator for the "description" field. It is called by the builders before save.
-	painpoint.DescriptionValidator = painpointDescDescription.Validators[0].(func(string) error)
-	// painpointDescDisplayOrder is the schema descriptor for display_order field.
-	painpointDescDisplayOrder := painpointFields[2].Descriptor()
-	// painpoint.DefaultDisplayOrder holds the default value on creation for the display_order field.
-	painpoint.DefaultDisplayOrder = painpointDescDisplayOrder.Default.(int)
-	phaseFields := schema.Phase{}.Fields()
-	_ = phaseFields
-	// phaseDescLabel is the schema descriptor for label field.
-	phaseDescLabel := phaseFields[1].Descriptor()
-	// phase.LabelValidator is a validator for the "label" field. It is called by the builders before save.
-	phase.LabelValidator = phaseDescLabel.Validators[0].(func(string) error)
-	// phaseDescDisplayOrder is the schema descriptor for display_order field.
-	phaseDescDisplayOrder := phaseFields[2].Descriptor()
-	// phase.DefaultDisplayOrder holds the default value on creation for the display_order field.
-	phase.DefaultDisplayOrder = phaseDescDisplayOrder.Default.(int)
-	// phaseDescID is the schema descriptor for id field.
-	phaseDescID := phaseFields[0].Descriptor()
-	// phase.IDValidator is a validator for the "id" field. It is called by the builders before save.
-	phase.IDValidator = phaseDescID.Validators[0].(func(string) error)
 	pricingFields := schema.Pricing{}.Fields()
 	_ = pricingFields
+	// pricingDescLabel is the schema descriptor for label field.
+	pricingDescLabel := pricingFields[0].Descriptor()
+	// pricing.LabelValidator is a validator for the "label" field. It is called by the builders before save.
+	pricing.LabelValidator = pricingDescLabel.Validators[0].(func(string) error)
 	// pricingDescRate is the schema descriptor for rate field.
-	pricingDescRate := pricingFields[0].Descriptor()
+	pricingDescRate := pricingFields[1].Descriptor()
 	// pricing.RateValidator is a validator for the "rate" field. It is called by the builders before save.
 	pricing.RateValidator = pricingDescRate.Validators[0].(func(string) error)
 	// pricingDescBillingHours is the schema descriptor for billing_hours field.
-	pricingDescBillingHours := pricingFields[1].Descriptor()
+	pricingDescBillingHours := pricingFields[2].Descriptor()
 	// pricing.BillingHoursValidator is a validator for the "billing_hours" field. It is called by the builders before save.
 	pricing.BillingHoursValidator = pricingDescBillingHours.Validators[0].(func(string) error)
 	// pricingDescTrialRate is the schema descriptor for trial_rate field.
-	pricingDescTrialRate := pricingFields[2].Descriptor()
+	pricingDescTrialRate := pricingFields[3].Descriptor()
 	// pricing.TrialRateValidator is a validator for the "trial_rate" field. It is called by the builders before save.
 	pricing.TrialRateValidator = pricingDescTrialRate.Validators[0].(func(string) error)
 	pricingpatternFields := schema.PricingPattern{}.Fields()
@@ -122,50 +66,34 @@ func init() {
 	projectDescRole := projectFields[5].Descriptor()
 	// project.RoleValidator is a validator for the "role" field. It is called by the builders before save.
 	project.RoleValidator = projectDescRole.Validators[0].(func(string) error)
+	// projectDescTechIds is the schema descriptor for tech_ids field.
+	projectDescTechIds := projectFields[7].Descriptor()
+	// project.DefaultTechIds holds the default value on creation for the tech_ids field.
+	project.DefaultTechIds = projectDescTechIds.Default.([]string)
+	// projectDescPhaseIds is the schema descriptor for phase_ids field.
+	projectDescPhaseIds := projectFields[8].Descriptor()
+	// project.DefaultPhaseIds holds the default value on creation for the phase_ids field.
+	project.DefaultPhaseIds = projectDescPhaseIds.Default.([]string)
+	// projectDescDisplayOrder is the schema descriptor for display_order field.
+	projectDescDisplayOrder := projectFields[9].Descriptor()
+	// project.DefaultDisplayOrder holds the default value on creation for the display_order field.
+	project.DefaultDisplayOrder = projectDescDisplayOrder.Default.(int)
 	// projectDescID is the schema descriptor for id field.
 	projectDescID := projectFields[0].Descriptor()
 	// project.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	project.IDValidator = projectDescID.Validators[0].(func(string) error)
-	requirementFields := schema.Requirement{}.Fields()
-	_ = requirementFields
-	// requirementDescText is the schema descriptor for text field.
-	requirementDescText := requirementFields[1].Descriptor()
-	// requirement.TextValidator is a validator for the "text" field. It is called by the builders before save.
-	requirement.TextValidator = requirementDescText.Validators[0].(func(string) error)
-	// requirementDescDisplayOrder is the schema descriptor for display_order field.
-	requirementDescDisplayOrder := requirementFields[2].Descriptor()
-	// requirement.DefaultDisplayOrder holds the default value on creation for the display_order field.
-	requirement.DefaultDisplayOrder = requirementDescDisplayOrder.Default.(int)
-	techFields := schema.Tech{}.Fields()
-	_ = techFields
-	// techDescLabel is the schema descriptor for label field.
-	techDescLabel := techFields[1].Descriptor()
-	// tech.LabelValidator is a validator for the "label" field. It is called by the builders before save.
-	tech.LabelValidator = techDescLabel.Validators[0].(func(string) error)
-	// techDescCategory is the schema descriptor for category field.
-	techDescCategory := techFields[2].Descriptor()
-	// tech.CategoryValidator is a validator for the "category" field. It is called by the builders before save.
-	tech.CategoryValidator = techDescCategory.Validators[0].(func(string) error)
-	// techDescDisplayOrder is the schema descriptor for display_order field.
-	techDescDisplayOrder := techFields[3].Descriptor()
-	// tech.DefaultDisplayOrder holds the default value on creation for the display_order field.
-	tech.DefaultDisplayOrder = techDescDisplayOrder.Default.(int)
-	// techDescID is the schema descriptor for id field.
-	techDescID := techFields[0].Descriptor()
-	// tech.IDValidator is a validator for the "id" field. It is called by the builders before save.
-	tech.IDValidator = techDescID.Validators[0].(func(string) error)
-	workconditionFields := schema.WorkCondition{}.Fields()
-	_ = workconditionFields
-	// workconditionDescLabel is the schema descriptor for label field.
-	workconditionDescLabel := workconditionFields[0].Descriptor()
-	// workcondition.LabelValidator is a validator for the "label" field. It is called by the builders before save.
-	workcondition.LabelValidator = workconditionDescLabel.Validators[0].(func(string) error)
-	// workconditionDescValue is the schema descriptor for value field.
-	workconditionDescValue := workconditionFields[1].Descriptor()
-	// workcondition.ValueValidator is a validator for the "value" field. It is called by the builders before save.
-	workcondition.ValueValidator = workconditionDescValue.Validators[0].(func(string) error)
-	// workconditionDescDisplayOrder is the schema descriptor for display_order field.
-	workconditionDescDisplayOrder := workconditionFields[2].Descriptor()
-	// workcondition.DefaultDisplayOrder holds the default value on creation for the display_order field.
-	workcondition.DefaultDisplayOrder = workconditionDescDisplayOrder.Default.(int)
+	userFields := schema.User{}.Fields()
+	_ = userFields
+	// userDescLabel is the schema descriptor for label field.
+	userDescLabel := userFields[0].Descriptor()
+	// user.LabelValidator is a validator for the "label" field. It is called by the builders before save.
+	user.LabelValidator = userDescLabel.Validators[0].(func(string) error)
+	// userDescCode is the schema descriptor for code field.
+	userDescCode := userFields[1].Descriptor()
+	// user.CodeValidator is a validator for the "code" field. It is called by the builders before save.
+	user.CodeValidator = userDescCode.Validators[0].(func(string) error)
+	// userDescCreatedAt is the schema descriptor for created_at field.
+	userDescCreatedAt := userFields[2].Descriptor()
+	// user.DefaultCreatedAt holds the default value on creation for the created_at field.
+	user.DefaultCreatedAt = userDescCreatedAt.Default.(func() time.Time)
 }

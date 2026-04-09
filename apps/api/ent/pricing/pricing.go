@@ -12,6 +12,8 @@ const (
 	Label = "pricing"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldLabel holds the string denoting the label field in the database.
+	FieldLabel = "label"
 	// FieldRate holds the string denoting the rate field in the database.
 	FieldRate = "rate"
 	// FieldBillingHours holds the string denoting the billing_hours field in the database.
@@ -22,6 +24,8 @@ const (
 	FieldTrialNote = "trial_note"
 	// EdgePatterns holds the string denoting the patterns edge name in mutations.
 	EdgePatterns = "patterns"
+	// EdgeUsers holds the string denoting the users edge name in mutations.
+	EdgeUsers = "users"
 	// Table holds the table name of the pricing in the database.
 	Table = "pricings"
 	// PatternsTable is the table that holds the patterns relation/edge.
@@ -31,11 +35,19 @@ const (
 	PatternsInverseTable = "pricing_patterns"
 	// PatternsColumn is the table column denoting the patterns relation/edge.
 	PatternsColumn = "pricing_id"
+	// UsersTable is the table that holds the users relation/edge.
+	UsersTable = "users"
+	// UsersInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	UsersInverseTable = "users"
+	// UsersColumn is the table column denoting the users relation/edge.
+	UsersColumn = "pricing_id"
 )
 
 // Columns holds all SQL columns for pricing fields.
 var Columns = []string{
 	FieldID,
+	FieldLabel,
 	FieldRate,
 	FieldBillingHours,
 	FieldTrialRate,
@@ -53,6 +65,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// LabelValidator is a validator for the "label" field. It is called by the builders before save.
+	LabelValidator func(string) error
 	// RateValidator is a validator for the "rate" field. It is called by the builders before save.
 	RateValidator func(string) error
 	// BillingHoursValidator is a validator for the "billing_hours" field. It is called by the builders before save.
@@ -67,6 +81,11 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByLabel orders the results by the label field.
+func ByLabel(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLabel, opts...).ToFunc()
 }
 
 // ByRate orders the results by the rate field.
@@ -102,10 +121,31 @@ func ByPatterns(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newPatternsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByUsersCount orders the results by users count.
+func ByUsersCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newUsersStep(), opts...)
+	}
+}
+
+// ByUsers orders the results by users terms.
+func ByUsers(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newUsersStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newPatternsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PatternsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, PatternsTable, PatternsColumn),
+	)
+}
+func newUsersStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(UsersInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, UsersTable, UsersColumn),
 	)
 }

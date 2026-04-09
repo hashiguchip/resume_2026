@@ -10,9 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/phase"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/project"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/tech"
 )
 
 // ProjectCreate is the builder for creating a Project entity.
@@ -66,40 +64,36 @@ func (_c *ProjectCreate) SetSummary(v string) *ProjectCreate {
 	return _c
 }
 
+// SetTechIds sets the "tech_ids" field.
+func (_c *ProjectCreate) SetTechIds(v []string) *ProjectCreate {
+	_c.mutation.SetTechIds(v)
+	return _c
+}
+
+// SetPhaseIds sets the "phase_ids" field.
+func (_c *ProjectCreate) SetPhaseIds(v []string) *ProjectCreate {
+	_c.mutation.SetPhaseIds(v)
+	return _c
+}
+
+// SetDisplayOrder sets the "display_order" field.
+func (_c *ProjectCreate) SetDisplayOrder(v int) *ProjectCreate {
+	_c.mutation.SetDisplayOrder(v)
+	return _c
+}
+
+// SetNillableDisplayOrder sets the "display_order" field if the given value is not nil.
+func (_c *ProjectCreate) SetNillableDisplayOrder(v *int) *ProjectCreate {
+	if v != nil {
+		_c.SetDisplayOrder(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *ProjectCreate) SetID(v string) *ProjectCreate {
 	_c.mutation.SetID(v)
 	return _c
-}
-
-// AddTechIDs adds the "techs" edge to the Tech entity by IDs.
-func (_c *ProjectCreate) AddTechIDs(ids ...string) *ProjectCreate {
-	_c.mutation.AddTechIDs(ids...)
-	return _c
-}
-
-// AddTechs adds the "techs" edges to the Tech entity.
-func (_c *ProjectCreate) AddTechs(v ...*Tech) *ProjectCreate {
-	ids := make([]string, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddTechIDs(ids...)
-}
-
-// AddPhaseIDs adds the "phases" edge to the Phase entity by IDs.
-func (_c *ProjectCreate) AddPhaseIDs(ids ...string) *ProjectCreate {
-	_c.mutation.AddPhaseIDs(ids...)
-	return _c
-}
-
-// AddPhases adds the "phases" edges to the Phase entity.
-func (_c *ProjectCreate) AddPhases(v ...*Phase) *ProjectCreate {
-	ids := make([]string, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddPhaseIDs(ids...)
 }
 
 // Mutation returns the ProjectMutation object of the builder.
@@ -109,6 +103,7 @@ func (_c *ProjectCreate) Mutation() *ProjectMutation {
 
 // Save creates the Project in the database.
 func (_c *ProjectCreate) Save(ctx context.Context) (*Project, error) {
+	_c.defaults()
 	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
@@ -131,6 +126,22 @@ func (_c *ProjectCreate) Exec(ctx context.Context) error {
 func (_c *ProjectCreate) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (_c *ProjectCreate) defaults() {
+	if _, ok := _c.mutation.TechIds(); !ok {
+		v := project.DefaultTechIds
+		_c.mutation.SetTechIds(v)
+	}
+	if _, ok := _c.mutation.PhaseIds(); !ok {
+		v := project.DefaultPhaseIds
+		_c.mutation.SetPhaseIds(v)
+	}
+	if _, ok := _c.mutation.DisplayOrder(); !ok {
+		v := project.DefaultDisplayOrder
+		_c.mutation.SetDisplayOrder(v)
 	}
 }
 
@@ -165,6 +176,15 @@ func (_c *ProjectCreate) check() error {
 	}
 	if _, ok := _c.mutation.Summary(); !ok {
 		return &ValidationError{Name: "summary", err: errors.New(`ent: missing required field "Project.summary"`)}
+	}
+	if _, ok := _c.mutation.TechIds(); !ok {
+		return &ValidationError{Name: "tech_ids", err: errors.New(`ent: missing required field "Project.tech_ids"`)}
+	}
+	if _, ok := _c.mutation.PhaseIds(); !ok {
+		return &ValidationError{Name: "phase_ids", err: errors.New(`ent: missing required field "Project.phase_ids"`)}
+	}
+	if _, ok := _c.mutation.DisplayOrder(); !ok {
+		return &ValidationError{Name: "display_order", err: errors.New(`ent: missing required field "Project.display_order"`)}
 	}
 	if v, ok := _c.mutation.ID(); ok {
 		if err := project.IDValidator(v); err != nil {
@@ -230,37 +250,17 @@ func (_c *ProjectCreate) createSpec() (*Project, *sqlgraph.CreateSpec) {
 		_spec.SetField(project.FieldSummary, field.TypeString, value)
 		_node.Summary = value
 	}
-	if nodes := _c.mutation.TechsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   project.TechsTable,
-			Columns: project.TechsPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(tech.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
+	if value, ok := _c.mutation.TechIds(); ok {
+		_spec.SetField(project.FieldTechIds, field.TypeJSON, value)
+		_node.TechIds = value
 	}
-	if nodes := _c.mutation.PhasesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   project.PhasesTable,
-			Columns: project.PhasesPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(phase.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
+	if value, ok := _c.mutation.PhaseIds(); ok {
+		_spec.SetField(project.FieldPhaseIds, field.TypeJSON, value)
+		_node.PhaseIds = value
+	}
+	if value, ok := _c.mutation.DisplayOrder(); ok {
+		_spec.SetField(project.FieldDisplayOrder, field.TypeInt, value)
+		_node.DisplayOrder = value
 	}
 	return _node, _spec
 }
@@ -283,6 +283,7 @@ func (_c *ProjectCreateBulk) Save(ctx context.Context) ([]*Project, error) {
 	for i := range _c.builders {
 		func(i int, root context.Context) {
 			builder := _c.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*ProjectMutation)
 				if !ok {

@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -12,10 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/phase"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/predicate"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/project"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/tech"
 )
 
 // ProjectQuery is the builder for querying Project entities.
@@ -25,8 +22,6 @@ type ProjectQuery struct {
 	order      []project.OrderOption
 	inters     []Interceptor
 	predicates []predicate.Project
-	withTechs  *TechQuery
-	withPhases *PhaseQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -61,50 +56,6 @@ func (_q *ProjectQuery) Unique(unique bool) *ProjectQuery {
 func (_q *ProjectQuery) Order(o ...project.OrderOption) *ProjectQuery {
 	_q.order = append(_q.order, o...)
 	return _q
-}
-
-// QueryTechs chains the current query on the "techs" edge.
-func (_q *ProjectQuery) QueryTechs() *TechQuery {
-	query := (&TechClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(project.Table, project.FieldID, selector),
-			sqlgraph.To(tech.Table, tech.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, project.TechsTable, project.TechsPrimaryKey...),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryPhases chains the current query on the "phases" edge.
-func (_q *ProjectQuery) QueryPhases() *PhaseQuery {
-	query := (&PhaseClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(project.Table, project.FieldID, selector),
-			sqlgraph.To(phase.Table, phase.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, project.PhasesTable, project.PhasesPrimaryKey...),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
 }
 
 // First returns the first Project entity from the query.
@@ -299,34 +250,10 @@ func (_q *ProjectQuery) Clone() *ProjectQuery {
 		order:      append([]project.OrderOption{}, _q.order...),
 		inters:     append([]Interceptor{}, _q.inters...),
 		predicates: append([]predicate.Project{}, _q.predicates...),
-		withTechs:  _q.withTechs.Clone(),
-		withPhases: _q.withPhases.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
-}
-
-// WithTechs tells the query-builder to eager-load the nodes that are connected to
-// the "techs" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *ProjectQuery) WithTechs(opts ...func(*TechQuery)) *ProjectQuery {
-	query := (&TechClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withTechs = query
-	return _q
-}
-
-// WithPhases tells the query-builder to eager-load the nodes that are connected to
-// the "phases" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *ProjectQuery) WithPhases(opts ...func(*PhaseQuery)) *ProjectQuery {
-	query := (&PhaseClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withPhases = query
-	return _q
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -405,12 +332,8 @@ func (_q *ProjectQuery) prepareQuery(ctx context.Context) error {
 
 func (_q *ProjectQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Project, error) {
 	var (
-		nodes       = []*Project{}
-		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
-			_q.withTechs != nil,
-			_q.withPhases != nil,
-		}
+		nodes = []*Project{}
+		_spec = _q.querySpec()
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Project).scanValues(nil, columns)
@@ -418,7 +341,6 @@ func (_q *ProjectQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Proj
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Project{config: _q.config}
 		nodes = append(nodes, node)
-		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	for i := range hooks {
@@ -430,144 +352,7 @@ func (_q *ProjectQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Proj
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withTechs; query != nil {
-		if err := _q.loadTechs(ctx, query, nodes,
-			func(n *Project) { n.Edges.Techs = []*Tech{} },
-			func(n *Project, e *Tech) { n.Edges.Techs = append(n.Edges.Techs, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := _q.withPhases; query != nil {
-		if err := _q.loadPhases(ctx, query, nodes,
-			func(n *Project) { n.Edges.Phases = []*Phase{} },
-			func(n *Project, e *Phase) { n.Edges.Phases = append(n.Edges.Phases, e) }); err != nil {
-			return nil, err
-		}
-	}
 	return nodes, nil
-}
-
-func (_q *ProjectQuery) loadTechs(ctx context.Context, query *TechQuery, nodes []*Project, init func(*Project), assign func(*Project, *Tech)) error {
-	edgeIDs := make([]driver.Value, len(nodes))
-	byID := make(map[string]*Project)
-	nids := make(map[string]map[*Project]struct{})
-	for i, node := range nodes {
-		edgeIDs[i] = node.ID
-		byID[node.ID] = node
-		if init != nil {
-			init(node)
-		}
-	}
-	query.Where(func(s *sql.Selector) {
-		joinT := sql.Table(project.TechsTable)
-		s.Join(joinT).On(s.C(tech.FieldID), joinT.C(project.TechsPrimaryKey[1]))
-		s.Where(sql.InValues(joinT.C(project.TechsPrimaryKey[0]), edgeIDs...))
-		columns := s.SelectedColumns()
-		s.Select(joinT.C(project.TechsPrimaryKey[0]))
-		s.AppendSelect(columns...)
-		s.SetDistinct(false)
-	})
-	if err := query.prepareQuery(ctx); err != nil {
-		return err
-	}
-	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
-		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
-			assign := spec.Assign
-			values := spec.ScanValues
-			spec.ScanValues = func(columns []string) ([]any, error) {
-				values, err := values(columns[1:])
-				if err != nil {
-					return nil, err
-				}
-				return append([]any{new(sql.NullString)}, values...), nil
-			}
-			spec.Assign = func(columns []string, values []any) error {
-				outValue := values[0].(*sql.NullString).String
-				inValue := values[1].(*sql.NullString).String
-				if nids[inValue] == nil {
-					nids[inValue] = map[*Project]struct{}{byID[outValue]: {}}
-					return assign(columns[1:], values[1:])
-				}
-				nids[inValue][byID[outValue]] = struct{}{}
-				return nil
-			}
-		})
-	})
-	neighbors, err := withInterceptors[[]*Tech](ctx, query, qr, query.inters)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		nodes, ok := nids[n.ID]
-		if !ok {
-			return fmt.Errorf(`unexpected "techs" node returned %v`, n.ID)
-		}
-		for kn := range nodes {
-			assign(kn, n)
-		}
-	}
-	return nil
-}
-func (_q *ProjectQuery) loadPhases(ctx context.Context, query *PhaseQuery, nodes []*Project, init func(*Project), assign func(*Project, *Phase)) error {
-	edgeIDs := make([]driver.Value, len(nodes))
-	byID := make(map[string]*Project)
-	nids := make(map[string]map[*Project]struct{})
-	for i, node := range nodes {
-		edgeIDs[i] = node.ID
-		byID[node.ID] = node
-		if init != nil {
-			init(node)
-		}
-	}
-	query.Where(func(s *sql.Selector) {
-		joinT := sql.Table(project.PhasesTable)
-		s.Join(joinT).On(s.C(phase.FieldID), joinT.C(project.PhasesPrimaryKey[1]))
-		s.Where(sql.InValues(joinT.C(project.PhasesPrimaryKey[0]), edgeIDs...))
-		columns := s.SelectedColumns()
-		s.Select(joinT.C(project.PhasesPrimaryKey[0]))
-		s.AppendSelect(columns...)
-		s.SetDistinct(false)
-	})
-	if err := query.prepareQuery(ctx); err != nil {
-		return err
-	}
-	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
-		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
-			assign := spec.Assign
-			values := spec.ScanValues
-			spec.ScanValues = func(columns []string) ([]any, error) {
-				values, err := values(columns[1:])
-				if err != nil {
-					return nil, err
-				}
-				return append([]any{new(sql.NullString)}, values...), nil
-			}
-			spec.Assign = func(columns []string, values []any) error {
-				outValue := values[0].(*sql.NullString).String
-				inValue := values[1].(*sql.NullString).String
-				if nids[inValue] == nil {
-					nids[inValue] = map[*Project]struct{}{byID[outValue]: {}}
-					return assign(columns[1:], values[1:])
-				}
-				nids[inValue][byID[outValue]] = struct{}{}
-				return nil
-			}
-		})
-	})
-	neighbors, err := withInterceptors[[]*Phase](ctx, query, qr, query.inters)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		nodes, ok := nids[n.ID]
-		if !ok {
-			return fmt.Errorf(`unexpected "phases" node returned %v`, n.ID)
-		}
-		for kn := range nodes {
-			assign(kn, n)
-		}
-	}
-	return nil
 }
 
 func (_q *ProjectQuery) sqlCount(ctx context.Context) (int, error) {

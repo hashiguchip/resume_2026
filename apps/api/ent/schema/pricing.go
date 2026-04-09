@@ -6,16 +6,19 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// Pricing は料金テーブルの singleton。実質 1 行のみ存在する想定。
+// Pricing は料金プラン。複数行存在し得る (user 毎に異なるプランを提示する想定)。
 //
-// 「単一行 vs 複数行」を schema レベルで縛らない (CHECK 制約等で縛っても
-// migration が複雑になるだけ)。GetPortfolio 側で First を取る。
+// label は seed YAML から人間可読に参照するための natural key (例: "standard")。
+// 各 user は pricing_id でこの行を参照する (N:1 from User side)。
 type Pricing struct {
 	ent.Schema
 }
 
 func (Pricing) Fields() []ent.Field {
 	return []ent.Field{
+		field.String("label").
+			NotEmpty().
+			Unique(),
 		field.String("rate").NotEmpty(),
 		field.String("billing_hours").NotEmpty(),
 		field.String("trial_rate").NotEmpty(),
@@ -23,12 +26,14 @@ func (Pricing) Fields() []ent.Field {
 	}
 }
 
-// Pricing → PricingPattern の 1:N。pattern 側に外部キー pricing_id を持たせる。
-// StorageKey で column 名を明示しないと ent デフォルトで "pricing_patterns" に
-// なってしまい (テーブル名と同名で見にくい)、可読性が落ちる。
+// Edges:
+//   - patterns: Pricing → PricingPattern (1:N、子側に pricing_id 列)
+//   - users: Pricing ← User の back-reference (1 pricing → many users)
 func (Pricing) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("patterns", PricingPattern.Type).
 			StorageKey(edge.Column("pricing_id")),
+		edge.From("users", User.Type).
+			Ref("pricing"),
 	}
 }

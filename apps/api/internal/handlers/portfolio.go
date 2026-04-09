@@ -7,6 +7,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 
+	"github.com/hashiguchip/resume_2026/apps/api/internal/middleware"
 	"github.com/hashiguchip/resume_2026/apps/api/internal/repository"
 )
 
@@ -22,17 +23,23 @@ type PortfolioOutput struct {
 }
 
 // RegisterPortfolio は GET /api/portfolio を huma に登録する。
-// Security tag を設定することで middleware.Auth が gate 対象として識別する。
+//
+// middleware.Auth が認証成功時に request context に埋めた User を取り出し、
+// その user に紐づく pricing + 全 projects を返す。
 func RegisterPortfolio(api huma.API, repo repository.PortfolioRepository) {
 	huma.Register(api, huma.Operation{
 		OperationID: "get-portfolio",
 		Method:      http.MethodGet,
 		Path:        "/api/portfolio",
 		Summary:     "Aggregate portfolio data",
-		Description: "Returns projects, techs, phases, FAQ, sections, and pricing in one response.",
+		Description: "Returns the projects and the pricing plan associated with the authenticated user.",
 		Security:    []map[string][]string{{"referralCode": {}}},
 	}, func(ctx context.Context, _ *PortfolioInput) (*PortfolioOutput, error) {
-		p, err := repo.GetPortfolio(ctx)
+		u, ok := middleware.UserFromContext(ctx)
+		if !ok || u == nil {
+			return nil, huma.Error500InternalServerError("missing user in context")
+		}
+		p, err := repo.GetPortfolioForUser(ctx, u.ID)
 		if err != nil {
 			return nil, huma.Error500InternalServerError("failed to load portfolio", err)
 		}

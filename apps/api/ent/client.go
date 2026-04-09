@@ -15,16 +15,10 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/benefit"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/faqitem"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/painpoint"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/phase"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/pricing"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/pricingpattern"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/project"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/requirement"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/tech"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/workcondition"
+	"github.com/hashiguchip/resume_2026/apps/api/ent/user"
 )
 
 // Client is the client that holds all ent builders.
@@ -32,26 +26,14 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
-	// Benefit is the client for interacting with the Benefit builders.
-	Benefit *BenefitClient
-	// FAQItem is the client for interacting with the FAQItem builders.
-	FAQItem *FAQItemClient
-	// PainPoint is the client for interacting with the PainPoint builders.
-	PainPoint *PainPointClient
-	// Phase is the client for interacting with the Phase builders.
-	Phase *PhaseClient
 	// Pricing is the client for interacting with the Pricing builders.
 	Pricing *PricingClient
 	// PricingPattern is the client for interacting with the PricingPattern builders.
 	PricingPattern *PricingPatternClient
 	// Project is the client for interacting with the Project builders.
 	Project *ProjectClient
-	// Requirement is the client for interacting with the Requirement builders.
-	Requirement *RequirementClient
-	// Tech is the client for interacting with the Tech builders.
-	Tech *TechClient
-	// WorkCondition is the client for interacting with the WorkCondition builders.
-	WorkCondition *WorkConditionClient
+	// User is the client for interacting with the User builders.
+	User *UserClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -63,16 +45,10 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
-	c.Benefit = NewBenefitClient(c.config)
-	c.FAQItem = NewFAQItemClient(c.config)
-	c.PainPoint = NewPainPointClient(c.config)
-	c.Phase = NewPhaseClient(c.config)
 	c.Pricing = NewPricingClient(c.config)
 	c.PricingPattern = NewPricingPatternClient(c.config)
 	c.Project = NewProjectClient(c.config)
-	c.Requirement = NewRequirementClient(c.config)
-	c.Tech = NewTechClient(c.config)
-	c.WorkCondition = NewWorkConditionClient(c.config)
+	c.User = NewUserClient(c.config)
 }
 
 type (
@@ -165,16 +141,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:            ctx,
 		config:         cfg,
-		Benefit:        NewBenefitClient(cfg),
-		FAQItem:        NewFAQItemClient(cfg),
-		PainPoint:      NewPainPointClient(cfg),
-		Phase:          NewPhaseClient(cfg),
 		Pricing:        NewPricingClient(cfg),
 		PricingPattern: NewPricingPatternClient(cfg),
 		Project:        NewProjectClient(cfg),
-		Requirement:    NewRequirementClient(cfg),
-		Tech:           NewTechClient(cfg),
-		WorkCondition:  NewWorkConditionClient(cfg),
+		User:           NewUserClient(cfg),
 	}, nil
 }
 
@@ -194,23 +164,17 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:            ctx,
 		config:         cfg,
-		Benefit:        NewBenefitClient(cfg),
-		FAQItem:        NewFAQItemClient(cfg),
-		PainPoint:      NewPainPointClient(cfg),
-		Phase:          NewPhaseClient(cfg),
 		Pricing:        NewPricingClient(cfg),
 		PricingPattern: NewPricingPatternClient(cfg),
 		Project:        NewProjectClient(cfg),
-		Requirement:    NewRequirementClient(cfg),
-		Tech:           NewTechClient(cfg),
-		WorkCondition:  NewWorkConditionClient(cfg),
+		User:           NewUserClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Benefit.
+//		Pricing.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -232,598 +196,34 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	for _, n := range []interface{ Use(...Hook) }{
-		c.Benefit, c.FAQItem, c.PainPoint, c.Phase, c.Pricing, c.PricingPattern,
-		c.Project, c.Requirement, c.Tech, c.WorkCondition,
-	} {
-		n.Use(hooks...)
-	}
+	c.Pricing.Use(hooks...)
+	c.PricingPattern.Use(hooks...)
+	c.Project.Use(hooks...)
+	c.User.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
-	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Benefit, c.FAQItem, c.PainPoint, c.Phase, c.Pricing, c.PricingPattern,
-		c.Project, c.Requirement, c.Tech, c.WorkCondition,
-	} {
-		n.Intercept(interceptors...)
-	}
+	c.Pricing.Intercept(interceptors...)
+	c.PricingPattern.Intercept(interceptors...)
+	c.Project.Intercept(interceptors...)
+	c.User.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
-	case *BenefitMutation:
-		return c.Benefit.mutate(ctx, m)
-	case *FAQItemMutation:
-		return c.FAQItem.mutate(ctx, m)
-	case *PainPointMutation:
-		return c.PainPoint.mutate(ctx, m)
-	case *PhaseMutation:
-		return c.Phase.mutate(ctx, m)
 	case *PricingMutation:
 		return c.Pricing.mutate(ctx, m)
 	case *PricingPatternMutation:
 		return c.PricingPattern.mutate(ctx, m)
 	case *ProjectMutation:
 		return c.Project.mutate(ctx, m)
-	case *RequirementMutation:
-		return c.Requirement.mutate(ctx, m)
-	case *TechMutation:
-		return c.Tech.mutate(ctx, m)
-	case *WorkConditionMutation:
-		return c.WorkCondition.mutate(ctx, m)
+	case *UserMutation:
+		return c.User.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
-	}
-}
-
-// BenefitClient is a client for the Benefit schema.
-type BenefitClient struct {
-	config
-}
-
-// NewBenefitClient returns a client for the Benefit from the given config.
-func NewBenefitClient(c config) *BenefitClient {
-	return &BenefitClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `benefit.Hooks(f(g(h())))`.
-func (c *BenefitClient) Use(hooks ...Hook) {
-	c.hooks.Benefit = append(c.hooks.Benefit, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `benefit.Intercept(f(g(h())))`.
-func (c *BenefitClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Benefit = append(c.inters.Benefit, interceptors...)
-}
-
-// Create returns a builder for creating a Benefit entity.
-func (c *BenefitClient) Create() *BenefitCreate {
-	mutation := newBenefitMutation(c.config, OpCreate)
-	return &BenefitCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Benefit entities.
-func (c *BenefitClient) CreateBulk(builders ...*BenefitCreate) *BenefitCreateBulk {
-	return &BenefitCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *BenefitClient) MapCreateBulk(slice any, setFunc func(*BenefitCreate, int)) *BenefitCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &BenefitCreateBulk{err: fmt.Errorf("calling to BenefitClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*BenefitCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &BenefitCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Benefit.
-func (c *BenefitClient) Update() *BenefitUpdate {
-	mutation := newBenefitMutation(c.config, OpUpdate)
-	return &BenefitUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *BenefitClient) UpdateOne(_m *Benefit) *BenefitUpdateOne {
-	mutation := newBenefitMutation(c.config, OpUpdateOne, withBenefit(_m))
-	return &BenefitUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *BenefitClient) UpdateOneID(id int) *BenefitUpdateOne {
-	mutation := newBenefitMutation(c.config, OpUpdateOne, withBenefitID(id))
-	return &BenefitUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Benefit.
-func (c *BenefitClient) Delete() *BenefitDelete {
-	mutation := newBenefitMutation(c.config, OpDelete)
-	return &BenefitDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *BenefitClient) DeleteOne(_m *Benefit) *BenefitDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *BenefitClient) DeleteOneID(id int) *BenefitDeleteOne {
-	builder := c.Delete().Where(benefit.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &BenefitDeleteOne{builder}
-}
-
-// Query returns a query builder for Benefit.
-func (c *BenefitClient) Query() *BenefitQuery {
-	return &BenefitQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeBenefit},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Benefit entity by its id.
-func (c *BenefitClient) Get(ctx context.Context, id int) (*Benefit, error) {
-	return c.Query().Where(benefit.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *BenefitClient) GetX(ctx context.Context, id int) *Benefit {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *BenefitClient) Hooks() []Hook {
-	return c.hooks.Benefit
-}
-
-// Interceptors returns the client interceptors.
-func (c *BenefitClient) Interceptors() []Interceptor {
-	return c.inters.Benefit
-}
-
-func (c *BenefitClient) mutate(ctx context.Context, m *BenefitMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&BenefitCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&BenefitUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&BenefitUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&BenefitDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown Benefit mutation op: %q", m.Op())
-	}
-}
-
-// FAQItemClient is a client for the FAQItem schema.
-type FAQItemClient struct {
-	config
-}
-
-// NewFAQItemClient returns a client for the FAQItem from the given config.
-func NewFAQItemClient(c config) *FAQItemClient {
-	return &FAQItemClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `faqitem.Hooks(f(g(h())))`.
-func (c *FAQItemClient) Use(hooks ...Hook) {
-	c.hooks.FAQItem = append(c.hooks.FAQItem, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `faqitem.Intercept(f(g(h())))`.
-func (c *FAQItemClient) Intercept(interceptors ...Interceptor) {
-	c.inters.FAQItem = append(c.inters.FAQItem, interceptors...)
-}
-
-// Create returns a builder for creating a FAQItem entity.
-func (c *FAQItemClient) Create() *FAQItemCreate {
-	mutation := newFAQItemMutation(c.config, OpCreate)
-	return &FAQItemCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of FAQItem entities.
-func (c *FAQItemClient) CreateBulk(builders ...*FAQItemCreate) *FAQItemCreateBulk {
-	return &FAQItemCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *FAQItemClient) MapCreateBulk(slice any, setFunc func(*FAQItemCreate, int)) *FAQItemCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &FAQItemCreateBulk{err: fmt.Errorf("calling to FAQItemClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*FAQItemCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &FAQItemCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for FAQItem.
-func (c *FAQItemClient) Update() *FAQItemUpdate {
-	mutation := newFAQItemMutation(c.config, OpUpdate)
-	return &FAQItemUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *FAQItemClient) UpdateOne(_m *FAQItem) *FAQItemUpdateOne {
-	mutation := newFAQItemMutation(c.config, OpUpdateOne, withFAQItem(_m))
-	return &FAQItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *FAQItemClient) UpdateOneID(id int) *FAQItemUpdateOne {
-	mutation := newFAQItemMutation(c.config, OpUpdateOne, withFAQItemID(id))
-	return &FAQItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for FAQItem.
-func (c *FAQItemClient) Delete() *FAQItemDelete {
-	mutation := newFAQItemMutation(c.config, OpDelete)
-	return &FAQItemDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *FAQItemClient) DeleteOne(_m *FAQItem) *FAQItemDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *FAQItemClient) DeleteOneID(id int) *FAQItemDeleteOne {
-	builder := c.Delete().Where(faqitem.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &FAQItemDeleteOne{builder}
-}
-
-// Query returns a query builder for FAQItem.
-func (c *FAQItemClient) Query() *FAQItemQuery {
-	return &FAQItemQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeFAQItem},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a FAQItem entity by its id.
-func (c *FAQItemClient) Get(ctx context.Context, id int) (*FAQItem, error) {
-	return c.Query().Where(faqitem.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *FAQItemClient) GetX(ctx context.Context, id int) *FAQItem {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *FAQItemClient) Hooks() []Hook {
-	return c.hooks.FAQItem
-}
-
-// Interceptors returns the client interceptors.
-func (c *FAQItemClient) Interceptors() []Interceptor {
-	return c.inters.FAQItem
-}
-
-func (c *FAQItemClient) mutate(ctx context.Context, m *FAQItemMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&FAQItemCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&FAQItemUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&FAQItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&FAQItemDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown FAQItem mutation op: %q", m.Op())
-	}
-}
-
-// PainPointClient is a client for the PainPoint schema.
-type PainPointClient struct {
-	config
-}
-
-// NewPainPointClient returns a client for the PainPoint from the given config.
-func NewPainPointClient(c config) *PainPointClient {
-	return &PainPointClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `painpoint.Hooks(f(g(h())))`.
-func (c *PainPointClient) Use(hooks ...Hook) {
-	c.hooks.PainPoint = append(c.hooks.PainPoint, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `painpoint.Intercept(f(g(h())))`.
-func (c *PainPointClient) Intercept(interceptors ...Interceptor) {
-	c.inters.PainPoint = append(c.inters.PainPoint, interceptors...)
-}
-
-// Create returns a builder for creating a PainPoint entity.
-func (c *PainPointClient) Create() *PainPointCreate {
-	mutation := newPainPointMutation(c.config, OpCreate)
-	return &PainPointCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of PainPoint entities.
-func (c *PainPointClient) CreateBulk(builders ...*PainPointCreate) *PainPointCreateBulk {
-	return &PainPointCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *PainPointClient) MapCreateBulk(slice any, setFunc func(*PainPointCreate, int)) *PainPointCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &PainPointCreateBulk{err: fmt.Errorf("calling to PainPointClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*PainPointCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &PainPointCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for PainPoint.
-func (c *PainPointClient) Update() *PainPointUpdate {
-	mutation := newPainPointMutation(c.config, OpUpdate)
-	return &PainPointUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *PainPointClient) UpdateOne(_m *PainPoint) *PainPointUpdateOne {
-	mutation := newPainPointMutation(c.config, OpUpdateOne, withPainPoint(_m))
-	return &PainPointUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *PainPointClient) UpdateOneID(id int) *PainPointUpdateOne {
-	mutation := newPainPointMutation(c.config, OpUpdateOne, withPainPointID(id))
-	return &PainPointUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for PainPoint.
-func (c *PainPointClient) Delete() *PainPointDelete {
-	mutation := newPainPointMutation(c.config, OpDelete)
-	return &PainPointDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *PainPointClient) DeleteOne(_m *PainPoint) *PainPointDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *PainPointClient) DeleteOneID(id int) *PainPointDeleteOne {
-	builder := c.Delete().Where(painpoint.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &PainPointDeleteOne{builder}
-}
-
-// Query returns a query builder for PainPoint.
-func (c *PainPointClient) Query() *PainPointQuery {
-	return &PainPointQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypePainPoint},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a PainPoint entity by its id.
-func (c *PainPointClient) Get(ctx context.Context, id int) (*PainPoint, error) {
-	return c.Query().Where(painpoint.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *PainPointClient) GetX(ctx context.Context, id int) *PainPoint {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *PainPointClient) Hooks() []Hook {
-	return c.hooks.PainPoint
-}
-
-// Interceptors returns the client interceptors.
-func (c *PainPointClient) Interceptors() []Interceptor {
-	return c.inters.PainPoint
-}
-
-func (c *PainPointClient) mutate(ctx context.Context, m *PainPointMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&PainPointCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&PainPointUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&PainPointUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&PainPointDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown PainPoint mutation op: %q", m.Op())
-	}
-}
-
-// PhaseClient is a client for the Phase schema.
-type PhaseClient struct {
-	config
-}
-
-// NewPhaseClient returns a client for the Phase from the given config.
-func NewPhaseClient(c config) *PhaseClient {
-	return &PhaseClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `phase.Hooks(f(g(h())))`.
-func (c *PhaseClient) Use(hooks ...Hook) {
-	c.hooks.Phase = append(c.hooks.Phase, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `phase.Intercept(f(g(h())))`.
-func (c *PhaseClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Phase = append(c.inters.Phase, interceptors...)
-}
-
-// Create returns a builder for creating a Phase entity.
-func (c *PhaseClient) Create() *PhaseCreate {
-	mutation := newPhaseMutation(c.config, OpCreate)
-	return &PhaseCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Phase entities.
-func (c *PhaseClient) CreateBulk(builders ...*PhaseCreate) *PhaseCreateBulk {
-	return &PhaseCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *PhaseClient) MapCreateBulk(slice any, setFunc func(*PhaseCreate, int)) *PhaseCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &PhaseCreateBulk{err: fmt.Errorf("calling to PhaseClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*PhaseCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &PhaseCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Phase.
-func (c *PhaseClient) Update() *PhaseUpdate {
-	mutation := newPhaseMutation(c.config, OpUpdate)
-	return &PhaseUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *PhaseClient) UpdateOne(_m *Phase) *PhaseUpdateOne {
-	mutation := newPhaseMutation(c.config, OpUpdateOne, withPhase(_m))
-	return &PhaseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *PhaseClient) UpdateOneID(id string) *PhaseUpdateOne {
-	mutation := newPhaseMutation(c.config, OpUpdateOne, withPhaseID(id))
-	return &PhaseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Phase.
-func (c *PhaseClient) Delete() *PhaseDelete {
-	mutation := newPhaseMutation(c.config, OpDelete)
-	return &PhaseDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *PhaseClient) DeleteOne(_m *Phase) *PhaseDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *PhaseClient) DeleteOneID(id string) *PhaseDeleteOne {
-	builder := c.Delete().Where(phase.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &PhaseDeleteOne{builder}
-}
-
-// Query returns a query builder for Phase.
-func (c *PhaseClient) Query() *PhaseQuery {
-	return &PhaseQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypePhase},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Phase entity by its id.
-func (c *PhaseClient) Get(ctx context.Context, id string) (*Phase, error) {
-	return c.Query().Where(phase.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *PhaseClient) GetX(ctx context.Context, id string) *Phase {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryProjects queries the projects edge of a Phase.
-func (c *PhaseClient) QueryProjects(_m *Phase) *ProjectQuery {
-	query := (&ProjectClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(phase.Table, phase.FieldID, id),
-			sqlgraph.To(project.Table, project.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, phase.ProjectsTable, phase.ProjectsPrimaryKey...),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *PhaseClient) Hooks() []Hook {
-	return c.hooks.Phase
-}
-
-// Interceptors returns the client interceptors.
-func (c *PhaseClient) Interceptors() []Interceptor {
-	return c.inters.Phase
-}
-
-func (c *PhaseClient) mutate(ctx context.Context, m *PhaseMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&PhaseCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&PhaseUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&PhaseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&PhaseDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown Phase mutation op: %q", m.Op())
 	}
 }
 
@@ -944,6 +344,22 @@ func (c *PricingClient) QueryPatterns(_m *Pricing) *PricingPatternQuery {
 			sqlgraph.From(pricing.Table, pricing.FieldID, id),
 			sqlgraph.To(pricingpattern.Table, pricingpattern.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, pricing.PatternsTable, pricing.PatternsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUsers queries the users edge of a Pricing.
+func (c *PricingClient) QueryUsers(_m *Pricing) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(pricing.Table, pricing.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, pricing.UsersTable, pricing.UsersColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -1233,38 +649,6 @@ func (c *ProjectClient) GetX(ctx context.Context, id string) *Project {
 	return obj
 }
 
-// QueryTechs queries the techs edge of a Project.
-func (c *ProjectClient) QueryTechs(_m *Project) *TechQuery {
-	query := (&TechClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(project.Table, project.FieldID, id),
-			sqlgraph.To(tech.Table, tech.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, project.TechsTable, project.TechsPrimaryKey...),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryPhases queries the phases edge of a Project.
-func (c *ProjectClient) QueryPhases(_m *Project) *PhaseQuery {
-	query := (&PhaseClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(project.Table, project.FieldID, id),
-			sqlgraph.To(phase.Table, phase.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, project.PhasesTable, project.PhasesPrimaryKey...),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // Hooks returns the client hooks.
 func (c *ProjectClient) Hooks() []Hook {
 	return c.hooks.Project
@@ -1290,107 +674,107 @@ func (c *ProjectClient) mutate(ctx context.Context, m *ProjectMutation) (Value, 
 	}
 }
 
-// RequirementClient is a client for the Requirement schema.
-type RequirementClient struct {
+// UserClient is a client for the User schema.
+type UserClient struct {
 	config
 }
 
-// NewRequirementClient returns a client for the Requirement from the given config.
-func NewRequirementClient(c config) *RequirementClient {
-	return &RequirementClient{config: c}
+// NewUserClient returns a client for the User from the given config.
+func NewUserClient(c config) *UserClient {
+	return &UserClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `requirement.Hooks(f(g(h())))`.
-func (c *RequirementClient) Use(hooks ...Hook) {
-	c.hooks.Requirement = append(c.hooks.Requirement, hooks...)
+// A call to `Use(f, g, h)` equals to `user.Hooks(f(g(h())))`.
+func (c *UserClient) Use(hooks ...Hook) {
+	c.hooks.User = append(c.hooks.User, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `requirement.Intercept(f(g(h())))`.
-func (c *RequirementClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Requirement = append(c.inters.Requirement, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `user.Intercept(f(g(h())))`.
+func (c *UserClient) Intercept(interceptors ...Interceptor) {
+	c.inters.User = append(c.inters.User, interceptors...)
 }
 
-// Create returns a builder for creating a Requirement entity.
-func (c *RequirementClient) Create() *RequirementCreate {
-	mutation := newRequirementMutation(c.config, OpCreate)
-	return &RequirementCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a User entity.
+func (c *UserClient) Create() *UserCreate {
+	mutation := newUserMutation(c.config, OpCreate)
+	return &UserCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of Requirement entities.
-func (c *RequirementClient) CreateBulk(builders ...*RequirementCreate) *RequirementCreateBulk {
-	return &RequirementCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of User entities.
+func (c *UserClient) CreateBulk(builders ...*UserCreate) *UserCreateBulk {
+	return &UserCreateBulk{config: c.config, builders: builders}
 }
 
 // MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
 // a builder and applies setFunc on it.
-func (c *RequirementClient) MapCreateBulk(slice any, setFunc func(*RequirementCreate, int)) *RequirementCreateBulk {
+func (c *UserClient) MapCreateBulk(slice any, setFunc func(*UserCreate, int)) *UserCreateBulk {
 	rv := reflect.ValueOf(slice)
 	if rv.Kind() != reflect.Slice {
-		return &RequirementCreateBulk{err: fmt.Errorf("calling to RequirementClient.MapCreateBulk with wrong type %T, need slice", slice)}
+		return &UserCreateBulk{err: fmt.Errorf("calling to UserClient.MapCreateBulk with wrong type %T, need slice", slice)}
 	}
-	builders := make([]*RequirementCreate, rv.Len())
+	builders := make([]*UserCreate, rv.Len())
 	for i := 0; i < rv.Len(); i++ {
 		builders[i] = c.Create()
 		setFunc(builders[i], i)
 	}
-	return &RequirementCreateBulk{config: c.config, builders: builders}
+	return &UserCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for Requirement.
-func (c *RequirementClient) Update() *RequirementUpdate {
-	mutation := newRequirementMutation(c.config, OpUpdate)
-	return &RequirementUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for User.
+func (c *UserClient) Update() *UserUpdate {
+	mutation := newUserMutation(c.config, OpUpdate)
+	return &UserUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *RequirementClient) UpdateOne(_m *Requirement) *RequirementUpdateOne {
-	mutation := newRequirementMutation(c.config, OpUpdateOne, withRequirement(_m))
-	return &RequirementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *UserClient) UpdateOne(_m *User) *UserUpdateOne {
+	mutation := newUserMutation(c.config, OpUpdateOne, withUser(_m))
+	return &UserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *RequirementClient) UpdateOneID(id int) *RequirementUpdateOne {
-	mutation := newRequirementMutation(c.config, OpUpdateOne, withRequirementID(id))
-	return &RequirementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *UserClient) UpdateOneID(id int) *UserUpdateOne {
+	mutation := newUserMutation(c.config, OpUpdateOne, withUserID(id))
+	return &UserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for Requirement.
-func (c *RequirementClient) Delete() *RequirementDelete {
-	mutation := newRequirementMutation(c.config, OpDelete)
-	return &RequirementDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for User.
+func (c *UserClient) Delete() *UserDelete {
+	mutation := newUserMutation(c.config, OpDelete)
+	return &UserDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *RequirementClient) DeleteOne(_m *Requirement) *RequirementDeleteOne {
+func (c *UserClient) DeleteOne(_m *User) *UserDeleteOne {
 	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *RequirementClient) DeleteOneID(id int) *RequirementDeleteOne {
-	builder := c.Delete().Where(requirement.ID(id))
+func (c *UserClient) DeleteOneID(id int) *UserDeleteOne {
+	builder := c.Delete().Where(user.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &RequirementDeleteOne{builder}
+	return &UserDeleteOne{builder}
 }
 
-// Query returns a query builder for Requirement.
-func (c *RequirementClient) Query() *RequirementQuery {
-	return &RequirementQuery{
+// Query returns a query builder for User.
+func (c *UserClient) Query() *UserQuery {
+	return &UserQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeRequirement},
+		ctx:    &QueryContext{Type: TypeUser},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a Requirement entity by its id.
-func (c *RequirementClient) Get(ctx context.Context, id int) (*Requirement, error) {
-	return c.Query().Where(requirement.ID(id)).Only(ctx)
+// Get returns a User entity by its id.
+func (c *UserClient) Get(ctx context.Context, id int) (*User, error) {
+	return c.Query().Where(user.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *RequirementClient) GetX(ctx context.Context, id int) *Requirement {
+func (c *UserClient) GetX(ctx context.Context, id int) *User {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -1398,148 +782,15 @@ func (c *RequirementClient) GetX(ctx context.Context, id int) *Requirement {
 	return obj
 }
 
-// Hooks returns the client hooks.
-func (c *RequirementClient) Hooks() []Hook {
-	return c.hooks.Requirement
-}
-
-// Interceptors returns the client interceptors.
-func (c *RequirementClient) Interceptors() []Interceptor {
-	return c.inters.Requirement
-}
-
-func (c *RequirementClient) mutate(ctx context.Context, m *RequirementMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&RequirementCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&RequirementUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&RequirementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&RequirementDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown Requirement mutation op: %q", m.Op())
-	}
-}
-
-// TechClient is a client for the Tech schema.
-type TechClient struct {
-	config
-}
-
-// NewTechClient returns a client for the Tech from the given config.
-func NewTechClient(c config) *TechClient {
-	return &TechClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `tech.Hooks(f(g(h())))`.
-func (c *TechClient) Use(hooks ...Hook) {
-	c.hooks.Tech = append(c.hooks.Tech, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `tech.Intercept(f(g(h())))`.
-func (c *TechClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Tech = append(c.inters.Tech, interceptors...)
-}
-
-// Create returns a builder for creating a Tech entity.
-func (c *TechClient) Create() *TechCreate {
-	mutation := newTechMutation(c.config, OpCreate)
-	return &TechCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Tech entities.
-func (c *TechClient) CreateBulk(builders ...*TechCreate) *TechCreateBulk {
-	return &TechCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *TechClient) MapCreateBulk(slice any, setFunc func(*TechCreate, int)) *TechCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &TechCreateBulk{err: fmt.Errorf("calling to TechClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*TechCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &TechCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Tech.
-func (c *TechClient) Update() *TechUpdate {
-	mutation := newTechMutation(c.config, OpUpdate)
-	return &TechUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *TechClient) UpdateOne(_m *Tech) *TechUpdateOne {
-	mutation := newTechMutation(c.config, OpUpdateOne, withTech(_m))
-	return &TechUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *TechClient) UpdateOneID(id string) *TechUpdateOne {
-	mutation := newTechMutation(c.config, OpUpdateOne, withTechID(id))
-	return &TechUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Tech.
-func (c *TechClient) Delete() *TechDelete {
-	mutation := newTechMutation(c.config, OpDelete)
-	return &TechDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *TechClient) DeleteOne(_m *Tech) *TechDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *TechClient) DeleteOneID(id string) *TechDeleteOne {
-	builder := c.Delete().Where(tech.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &TechDeleteOne{builder}
-}
-
-// Query returns a query builder for Tech.
-func (c *TechClient) Query() *TechQuery {
-	return &TechQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeTech},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Tech entity by its id.
-func (c *TechClient) Get(ctx context.Context, id string) (*Tech, error) {
-	return c.Query().Where(tech.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *TechClient) GetX(ctx context.Context, id string) *Tech {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryProjects queries the projects edge of a Tech.
-func (c *TechClient) QueryProjects(_m *Tech) *ProjectQuery {
-	query := (&ProjectClient{config: c.config}).Query()
+// QueryPricing queries the pricing edge of a User.
+func (c *UserClient) QueryPricing(_m *User) *PricingQuery {
+	query := (&PricingClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(tech.Table, tech.FieldID, id),
-			sqlgraph.To(project.Table, project.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, tech.ProjectsTable, tech.ProjectsPrimaryKey...),
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(pricing.Table, pricing.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, user.PricingTable, user.PricingColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -1548,171 +799,36 @@ func (c *TechClient) QueryProjects(_m *Tech) *ProjectQuery {
 }
 
 // Hooks returns the client hooks.
-func (c *TechClient) Hooks() []Hook {
-	return c.hooks.Tech
+func (c *UserClient) Hooks() []Hook {
+	return c.hooks.User
 }
 
 // Interceptors returns the client interceptors.
-func (c *TechClient) Interceptors() []Interceptor {
-	return c.inters.Tech
+func (c *UserClient) Interceptors() []Interceptor {
+	return c.inters.User
 }
 
-func (c *TechClient) mutate(ctx context.Context, m *TechMutation) (Value, error) {
+func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&TechCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&UserCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&TechUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&UserUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&TechUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&UserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&TechDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&UserDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown Tech mutation op: %q", m.Op())
-	}
-}
-
-// WorkConditionClient is a client for the WorkCondition schema.
-type WorkConditionClient struct {
-	config
-}
-
-// NewWorkConditionClient returns a client for the WorkCondition from the given config.
-func NewWorkConditionClient(c config) *WorkConditionClient {
-	return &WorkConditionClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `workcondition.Hooks(f(g(h())))`.
-func (c *WorkConditionClient) Use(hooks ...Hook) {
-	c.hooks.WorkCondition = append(c.hooks.WorkCondition, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `workcondition.Intercept(f(g(h())))`.
-func (c *WorkConditionClient) Intercept(interceptors ...Interceptor) {
-	c.inters.WorkCondition = append(c.inters.WorkCondition, interceptors...)
-}
-
-// Create returns a builder for creating a WorkCondition entity.
-func (c *WorkConditionClient) Create() *WorkConditionCreate {
-	mutation := newWorkConditionMutation(c.config, OpCreate)
-	return &WorkConditionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of WorkCondition entities.
-func (c *WorkConditionClient) CreateBulk(builders ...*WorkConditionCreate) *WorkConditionCreateBulk {
-	return &WorkConditionCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *WorkConditionClient) MapCreateBulk(slice any, setFunc func(*WorkConditionCreate, int)) *WorkConditionCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &WorkConditionCreateBulk{err: fmt.Errorf("calling to WorkConditionClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*WorkConditionCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &WorkConditionCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for WorkCondition.
-func (c *WorkConditionClient) Update() *WorkConditionUpdate {
-	mutation := newWorkConditionMutation(c.config, OpUpdate)
-	return &WorkConditionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *WorkConditionClient) UpdateOne(_m *WorkCondition) *WorkConditionUpdateOne {
-	mutation := newWorkConditionMutation(c.config, OpUpdateOne, withWorkCondition(_m))
-	return &WorkConditionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *WorkConditionClient) UpdateOneID(id int) *WorkConditionUpdateOne {
-	mutation := newWorkConditionMutation(c.config, OpUpdateOne, withWorkConditionID(id))
-	return &WorkConditionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for WorkCondition.
-func (c *WorkConditionClient) Delete() *WorkConditionDelete {
-	mutation := newWorkConditionMutation(c.config, OpDelete)
-	return &WorkConditionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *WorkConditionClient) DeleteOne(_m *WorkCondition) *WorkConditionDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *WorkConditionClient) DeleteOneID(id int) *WorkConditionDeleteOne {
-	builder := c.Delete().Where(workcondition.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &WorkConditionDeleteOne{builder}
-}
-
-// Query returns a query builder for WorkCondition.
-func (c *WorkConditionClient) Query() *WorkConditionQuery {
-	return &WorkConditionQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeWorkCondition},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a WorkCondition entity by its id.
-func (c *WorkConditionClient) Get(ctx context.Context, id int) (*WorkCondition, error) {
-	return c.Query().Where(workcondition.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *WorkConditionClient) GetX(ctx context.Context, id int) *WorkCondition {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *WorkConditionClient) Hooks() []Hook {
-	return c.hooks.WorkCondition
-}
-
-// Interceptors returns the client interceptors.
-func (c *WorkConditionClient) Interceptors() []Interceptor {
-	return c.inters.WorkCondition
-}
-
-func (c *WorkConditionClient) mutate(ctx context.Context, m *WorkConditionMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&WorkConditionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&WorkConditionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&WorkConditionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&WorkConditionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown WorkCondition mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown User mutation op: %q", m.Op())
 	}
 }
 
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Benefit, FAQItem, PainPoint, Phase, Pricing, PricingPattern, Project,
-		Requirement, Tech, WorkCondition []ent.Hook
+		Pricing, PricingPattern, Project, User []ent.Hook
 	}
 	inters struct {
-		Benefit, FAQItem, PainPoint, Phase, Pricing, PricingPattern, Project,
-		Requirement, Tech, WorkCondition []ent.Interceptor
+		Pricing, PricingPattern, Project, User []ent.Interceptor
 	}
 )

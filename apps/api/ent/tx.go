@@ -12,26 +12,14 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
-	// Benefit is the client for interacting with the Benefit builders.
-	Benefit *BenefitClient
-	// FAQItem is the client for interacting with the FAQItem builders.
-	FAQItem *FAQItemClient
-	// PainPoint is the client for interacting with the PainPoint builders.
-	PainPoint *PainPointClient
-	// Phase is the client for interacting with the Phase builders.
-	Phase *PhaseClient
 	// Pricing is the client for interacting with the Pricing builders.
 	Pricing *PricingClient
 	// PricingPattern is the client for interacting with the PricingPattern builders.
 	PricingPattern *PricingPatternClient
 	// Project is the client for interacting with the Project builders.
 	Project *ProjectClient
-	// Requirement is the client for interacting with the Requirement builders.
-	Requirement *RequirementClient
-	// Tech is the client for interacting with the Tech builders.
-	Tech *TechClient
-	// WorkCondition is the client for interacting with the WorkCondition builders.
-	WorkCondition *WorkConditionClient
+	// User is the client for interacting with the User builders.
+	User *UserClient
 
 	// lazily loaded.
 	client     *Client
@@ -163,16 +151,10 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
-	tx.Benefit = NewBenefitClient(tx.config)
-	tx.FAQItem = NewFAQItemClient(tx.config)
-	tx.PainPoint = NewPainPointClient(tx.config)
-	tx.Phase = NewPhaseClient(tx.config)
 	tx.Pricing = NewPricingClient(tx.config)
 	tx.PricingPattern = NewPricingPatternClient(tx.config)
 	tx.Project = NewProjectClient(tx.config)
-	tx.Requirement = NewRequirementClient(tx.config)
-	tx.Tech = NewTechClient(tx.config)
-	tx.WorkCondition = NewWorkConditionClient(tx.config)
+	tx.User = NewUserClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.
@@ -182,7 +164,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Benefit.QueryXXX(), the query will be executed
+// applies a query, for example: Pricing.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

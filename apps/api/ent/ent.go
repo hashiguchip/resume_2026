@@ -12,16 +12,10 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/benefit"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/faqitem"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/painpoint"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/phase"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/pricing"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/pricingpattern"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/project"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/requirement"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/tech"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/workcondition"
+	"github.com/hashiguchip/resume_2026/apps/api/ent/user"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -82,16 +76,10 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			benefit.Table:        benefit.ValidColumn,
-			faqitem.Table:        faqitem.ValidColumn,
-			painpoint.Table:      painpoint.ValidColumn,
-			phase.Table:          phase.ValidColumn,
 			pricing.Table:        pricing.ValidColumn,
 			pricingpattern.Table: pricingpattern.ValidColumn,
 			project.Table:        project.ValidColumn,
-			requirement.Table:    requirement.ValidColumn,
-			tech.Table:           tech.ValidColumn,
-			workcondition.Table:  workcondition.ValidColumn,
+			user.Table:           user.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

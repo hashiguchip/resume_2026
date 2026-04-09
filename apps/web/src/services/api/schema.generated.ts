@@ -13,7 +13,7 @@ export interface paths {
     };
     /**
      * Aggregate portfolio data
-     * @description Returns projects, techs, phases, FAQ, sections, and pricing in one response.
+     * @description Returns the projects and the pricing plan associated with the authenticated user.
      */
     get: operations["get-portfolio"];
     put?: never;
@@ -45,10 +45,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
-    Benefit: {
-      description: string;
-      title: string;
-    };
     ErrorDetail: {
       /** @description Where the error occurred, e.g. 'body.items[3].tags' or 'path.thing-id' */
       location?: string;
@@ -90,10 +86,6 @@ export interface components {
        */
       type: string;
     };
-    FAQItem: {
-      a: string;
-      q: string;
-    };
     HealthzOutputBody: {
       /**
        * @description Service status
@@ -101,24 +93,9 @@ export interface components {
        */
       status: string;
     };
-    PainPoint: {
-      description: string;
-      title: string;
-    };
-    Phase: {
-      id: string;
-      label: string;
-    };
     Portfolio: {
-      benefits: components["schemas"]["Benefit"][] | null;
-      faq: components["schemas"]["FAQItem"][] | null;
-      painPoints: components["schemas"]["PainPoint"][] | null;
-      phases: components["schemas"]["Phase"][] | null;
       pricing: components["schemas"]["Pricing"];
       projects: components["schemas"]["Project"][] | null;
-      requirements: components["schemas"]["Requirements"];
-      techs: components["schemas"]["Tech"][] | null;
-      workConditions: components["schemas"]["WorkCondition"][] | null;
     };
     Pricing: {
       billingHours: string;
@@ -148,19 +125,6 @@ export interface components {
       team: string;
       techIds: string[] | null;
       title: string;
-    };
-    Requirements: {
-      mustHave: string[] | null;
-      niceToHave: string[] | null;
-    };
-    Tech: {
-      category: string;
-      id: string;
-      label: string;
-    };
-    WorkCondition: {
-      label: string;
-      value: string;
     };
   };
   responses: never;

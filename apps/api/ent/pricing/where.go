@@ -73,6 +73,71 @@ func TrialNote(v string) predicate.Pricing {
 	return predicate.Pricing(sql.FieldEQ(FieldTrialNote, v))
 }
 
+// LabelEQ applies the EQ predicate on the "label" field.
+func LabelEQ(v string) predicate.Pricing {
+	return predicate.Pricing(sql.FieldEQ(FieldLabel, v))
+}
+
+// LabelNEQ applies the NEQ predicate on the "label" field.
+func LabelNEQ(v string) predicate.Pricing {
+	return predicate.Pricing(sql.FieldNEQ(FieldLabel, v))
+}
+
+// LabelIn applies the In predicate on the "label" field.
+func LabelIn(vs ...string) predicate.Pricing {
+	return predicate.Pricing(sql.FieldIn(FieldLabel, vs...))
+}
+
+// LabelNotIn applies the NotIn predicate on the "label" field.
+func LabelNotIn(vs ...string) predicate.Pricing {
+	return predicate.Pricing(sql.FieldNotIn(FieldLabel, vs...))
+}
+
+// LabelGT applies the GT predicate on the "label" field.
+func LabelGT(v string) predicate.Pricing {
+	return predicate.Pricing(sql.FieldGT(FieldLabel, v))
+}
+
+// LabelGTE applies the GTE predicate on the "label" field.
+func LabelGTE(v string) predicate.Pricing {
+	return predicate.Pricing(sql.FieldGTE(FieldLabel, v))
+}
+
+// LabelLT applies the LT predicate on the "label" field.
+func LabelLT(v string) predicate.Pricing {
+	return predicate.Pricing(sql.FieldLT(FieldLabel, v))
+}
+
+// LabelLTE applies the LTE predicate on the "label" field.
+func LabelLTE(v string) predicate.Pricing {
+	return predicate.Pricing(sql.FieldLTE(FieldLabel, v))
+}
+
+// LabelContains applies the Contains predicate on the "label" field.
+func LabelContains(v string) predicate.Pricing {
+	return predicate.Pricing(sql.FieldContains(FieldLabel, v))
+}
+
+// LabelHasPrefix applies the HasPrefix predicate on the "label" field.
+func LabelHasPrefix(v string) predicate.Pricing {
+	return predicate.Pricing(sql.FieldHasPrefix(FieldLabel, v))
+}
+
+// LabelHasSuffix applies the HasSuffix predicate on the "label" field.
+func LabelHasSuffix(v string) predicate.Pricing {
+	return predicate.Pricing(sql.FieldHasSuffix(FieldLabel, v))
+}
+
+// LabelEqualFold applies the EqualFold predicate on the "label" field.
+func LabelEqualFold(v string) predicate.Pricing {
+	return predicate.Pricing(sql.FieldEqualFold(FieldLabel, v))
+}
+
+// LabelContainsFold applies the ContainsFold predicate on the "label" field.
+func LabelContainsFold(v string) predicate.Pricing {
+	return predicate.Pricing(sql.FieldContainsFold(FieldLabel, v))
+}
+
 // RateEQ applies the EQ predicate on the "rate" field.
 func RateEQ(v string) predicate.Pricing {
 	return predicate.Pricing(sql.FieldEQ(FieldRate, v))
@@ -348,6 +413,29 @@ func HasPatterns() predicate.Pricing {
 func HasPatternsWith(preds ...predicate.PricingPattern) predicate.Pricing {
 	return predicate.Pricing(func(s *sql.Selector) {
 		step := newPatternsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasUsers applies the HasEdge predicate on the "users" edge.
+func HasUsers() predicate.Pricing {
+	return predicate.Pricing(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, UsersTable, UsersColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasUsersWith applies the HasEdge predicate on the "users" edge with a given conditions (other predicates).
+func HasUsersWith(preds ...predicate.User) predicate.Pricing {
+	return predicate.Pricing(func(s *sql.Selector) {
+		step := newUsersStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

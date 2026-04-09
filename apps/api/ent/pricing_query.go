@@ -15,6 +15,7 @@ import (
 	"github.com/hashiguchip/resume_2026/apps/api/ent/predicate"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/pricing"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/pricingpattern"
+	"github.com/hashiguchip/resume_2026/apps/api/ent/user"
 )
 
 // PricingQuery is the builder for querying Pricing entities.
@@ -25,6 +26,7 @@ type PricingQuery struct {
 	inters       []Interceptor
 	predicates   []predicate.Pricing
 	withPatterns *PricingPatternQuery
+	withUsers    *UserQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -76,6 +78,28 @@ func (_q *PricingQuery) QueryPatterns() *PricingPatternQuery {
 			sqlgraph.From(pricing.Table, pricing.FieldID, selector),
 			sqlgraph.To(pricingpattern.Table, pricingpattern.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, pricing.PatternsTable, pricing.PatternsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryUsers chains the current query on the "users" edge.
+func (_q *PricingQuery) QueryUsers() *UserQuery {
+	query := (&UserClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(pricing.Table, pricing.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, pricing.UsersTable, pricing.UsersColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -276,6 +300,7 @@ func (_q *PricingQuery) Clone() *PricingQuery {
 		inters:       append([]Interceptor{}, _q.inters...),
 		predicates:   append([]predicate.Pricing{}, _q.predicates...),
 		withPatterns: _q.withPatterns.Clone(),
+		withUsers:    _q.withUsers.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -293,18 +318,29 @@ func (_q *PricingQuery) WithPatterns(opts ...func(*PricingPatternQuery)) *Pricin
 	return _q
 }
 
+// WithUsers tells the query-builder to eager-load the nodes that are connected to
+// the "users" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *PricingQuery) WithUsers(opts ...func(*UserQuery)) *PricingQuery {
+	query := (&UserClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withUsers = query
+	return _q
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
 // Example:
 //
 //	var v []struct {
-//		Rate string `json:"rate,omitempty"`
+//		Label string `json:"label,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Pricing.Query().
-//		GroupBy(pricing.FieldRate).
+//		GroupBy(pricing.FieldLabel).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *PricingQuery) GroupBy(field string, fields ...string) *PricingGroupBy {
@@ -322,11 +358,11 @@ func (_q *PricingQuery) GroupBy(field string, fields ...string) *PricingGroupBy 
 // Example:
 //
 //	var v []struct {
-//		Rate string `json:"rate,omitempty"`
+//		Label string `json:"label,omitempty"`
 //	}
 //
 //	client.Pricing.Query().
-//		Select(pricing.FieldRate).
+//		Select(pricing.FieldLabel).
 //		Scan(ctx, &v)
 func (_q *PricingQuery) Select(fields ...string) *PricingSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
@@ -371,8 +407,9 @@ func (_q *PricingQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Pric
 	var (
 		nodes       = []*Pricing{}
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			_q.withPatterns != nil,
+			_q.withUsers != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -400,6 +437,13 @@ func (_q *PricingQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Pric
 			return nil, err
 		}
 	}
+	if query := _q.withUsers; query != nil {
+		if err := _q.loadUsers(ctx, query, nodes,
+			func(n *Pricing) { n.Edges.Users = []*User{} },
+			func(n *Pricing, e *User) { n.Edges.Users = append(n.Edges.Users, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
@@ -416,6 +460,37 @@ func (_q *PricingQuery) loadPatterns(ctx context.Context, query *PricingPatternQ
 	query.withFKs = true
 	query.Where(predicate.PricingPattern(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(pricing.PatternsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.pricing_id
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "pricing_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "pricing_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *PricingQuery) loadUsers(ctx context.Context, query *UserQuery, nodes []*Pricing, init func(*Pricing), assign func(*Pricing, *User)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Pricing)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.User(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(pricing.UsersColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

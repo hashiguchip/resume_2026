@@ -39,7 +39,7 @@ import (
 // 中身は使われないので zero value を返す stub で十分。
 type noopRepo struct{}
 
-func (noopRepo) GetPortfolio(_ context.Context) (*repository.Portfolio, error) {
+func (noopRepo) GetPortfolioForUser(_ context.Context, _ int) (*repository.Portfolio, error) {
 	return &repository.Portfolio{}, nil
 }
 

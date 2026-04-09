@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/predicate"
 )
 
@@ -93,6 +92,11 @@ func Role(v string) predicate.Project {
 // Summary applies equality check predicate on the "summary" field. It's identical to SummaryEQ.
 func Summary(v string) predicate.Project {
 	return predicate.Project(sql.FieldEQ(FieldSummary, v))
+}
+
+// DisplayOrder applies equality check predicate on the "display_order" field. It's identical to DisplayOrderEQ.
+func DisplayOrder(v int) predicate.Project {
+	return predicate.Project(sql.FieldEQ(FieldDisplayOrder, v))
 }
 
 // TitleEQ applies the EQ predicate on the "title" field.
@@ -445,50 +449,44 @@ func SummaryContainsFold(v string) predicate.Project {
 	return predicate.Project(sql.FieldContainsFold(FieldSummary, v))
 }
 
-// HasTechs applies the HasEdge predicate on the "techs" edge.
-func HasTechs() predicate.Project {
-	return predicate.Project(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, TechsTable, TechsPrimaryKey...),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
+// DisplayOrderEQ applies the EQ predicate on the "display_order" field.
+func DisplayOrderEQ(v int) predicate.Project {
+	return predicate.Project(sql.FieldEQ(FieldDisplayOrder, v))
 }
 
-// HasTechsWith applies the HasEdge predicate on the "techs" edge with a given conditions (other predicates).
-func HasTechsWith(preds ...predicate.Tech) predicate.Project {
-	return predicate.Project(func(s *sql.Selector) {
-		step := newTechsStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
+// DisplayOrderNEQ applies the NEQ predicate on the "display_order" field.
+func DisplayOrderNEQ(v int) predicate.Project {
+	return predicate.Project(sql.FieldNEQ(FieldDisplayOrder, v))
 }
 
-// HasPhases applies the HasEdge predicate on the "phases" edge.
-func HasPhases() predicate.Project {
-	return predicate.Project(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, PhasesTable, PhasesPrimaryKey...),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
+// DisplayOrderIn applies the In predicate on the "display_order" field.
+func DisplayOrderIn(vs ...int) predicate.Project {
+	return predicate.Project(sql.FieldIn(FieldDisplayOrder, vs...))
 }
 
-// HasPhasesWith applies the HasEdge predicate on the "phases" edge with a given conditions (other predicates).
-func HasPhasesWith(preds ...predicate.Phase) predicate.Project {
-	return predicate.Project(func(s *sql.Selector) {
-		step := newPhasesStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
+// DisplayOrderNotIn applies the NotIn predicate on the "display_order" field.
+func DisplayOrderNotIn(vs ...int) predicate.Project {
+	return predicate.Project(sql.FieldNotIn(FieldDisplayOrder, vs...))
+}
+
+// DisplayOrderGT applies the GT predicate on the "display_order" field.
+func DisplayOrderGT(v int) predicate.Project {
+	return predicate.Project(sql.FieldGT(FieldDisplayOrder, v))
+}
+
+// DisplayOrderGTE applies the GTE predicate on the "display_order" field.
+func DisplayOrderGTE(v int) predicate.Project {
+	return predicate.Project(sql.FieldGTE(FieldDisplayOrder, v))
+}
+
+// DisplayOrderLT applies the LT predicate on the "display_order" field.
+func DisplayOrderLT(v int) predicate.Project {
+	return predicate.Project(sql.FieldLT(FieldDisplayOrder, v))
+}
+
+// DisplayOrderLTE applies the LTE predicate on the "display_order" field.
+func DisplayOrderLTE(v int) predicate.Project {
+	return predicate.Project(sql.FieldLTE(FieldDisplayOrder, v))
 }
 
 // And groups predicates with the AND operator between them.

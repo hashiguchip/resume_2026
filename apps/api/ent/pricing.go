@@ -16,6 +16,8 @@ type Pricing struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// Label holds the value of the "label" field.
+	Label string `json:"label,omitempty"`
 	// Rate holds the value of the "rate" field.
 	Rate string `json:"rate,omitempty"`
 	// BillingHours holds the value of the "billing_hours" field.
@@ -34,9 +36,11 @@ type Pricing struct {
 type PricingEdges struct {
 	// Patterns holds the value of the patterns edge.
 	Patterns []*PricingPattern `json:"patterns,omitempty"`
+	// Users holds the value of the users edge.
+	Users []*User `json:"users,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // PatternsOrErr returns the Patterns value or an error if the edge
@@ -48,6 +52,15 @@ func (e PricingEdges) PatternsOrErr() ([]*PricingPattern, error) {
 	return nil, &NotLoadedError{edge: "patterns"}
 }
 
+// UsersOrErr returns the Users value or an error if the edge
+// was not loaded in eager-loading.
+func (e PricingEdges) UsersOrErr() ([]*User, error) {
+	if e.loadedTypes[1] {
+		return e.Users, nil
+	}
+	return nil, &NotLoadedError{edge: "users"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Pricing) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -55,7 +68,7 @@ func (*Pricing) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case pricing.FieldID:
 			values[i] = new(sql.NullInt64)
-		case pricing.FieldRate, pricing.FieldBillingHours, pricing.FieldTrialRate, pricing.FieldTrialNote:
+		case pricing.FieldLabel, pricing.FieldRate, pricing.FieldBillingHours, pricing.FieldTrialRate, pricing.FieldTrialNote:
 			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -78,6 +91,12 @@ func (_m *Pricing) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			_m.ID = int(value.Int64)
+		case pricing.FieldLabel:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field label", values[i])
+			} else if value.Valid {
+				_m.Label = value.String
+			}
 		case pricing.FieldRate:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field rate", values[i])
@@ -120,6 +139,11 @@ func (_m *Pricing) QueryPatterns() *PricingPatternQuery {
 	return NewPricingClient(_m.config).QueryPatterns(_m)
 }
 
+// QueryUsers queries the "users" edge of the Pricing entity.
+func (_m *Pricing) QueryUsers() *UserQuery {
+	return NewPricingClient(_m.config).QueryUsers(_m)
+}
+
 // Update returns a builder for updating this Pricing.
 // Note that you need to call Pricing.Unwrap() before calling this method if this Pricing
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -143,6 +167,9 @@ func (_m *Pricing) String() string {
 	var builder strings.Builder
 	builder.WriteString("Pricing(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString("label=")
+	builder.WriteString(_m.Label)
+	builder.WriteString(", ")
 	builder.WriteString("rate=")
 	builder.WriteString(_m.Rate)
 	builder.WriteString(", ")

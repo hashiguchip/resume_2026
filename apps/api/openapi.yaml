@@ -1,16 +1,5 @@
 components:
   schemas:
-    Benefit:
-      additionalProperties: false
-      properties:
-        description:
-          type: string
-        title:
-          type: string
-      required:
-        - title
-        - description
-      type: object
     ErrorDetail:
       additionalProperties: false
       properties:
@@ -63,17 +52,6 @@ components:
           format: uri
           type: string
       type: object
-    FAQItem:
-      additionalProperties: false
-      properties:
-        a:
-          type: string
-        q:
-          type: string
-      required:
-        - q
-        - a
-      type: object
     HealthzOutputBody:
       additionalProperties: false
       properties:
@@ -85,55 +63,9 @@ components:
       required:
         - status
       type: object
-    PainPoint:
-      additionalProperties: false
-      properties:
-        description:
-          type: string
-        title:
-          type: string
-      required:
-        - title
-        - description
-      type: object
-    Phase:
-      additionalProperties: false
-      properties:
-        id:
-          type: string
-        label:
-          type: string
-      required:
-        - id
-        - label
-      type: object
     Portfolio:
       additionalProperties: false
       properties:
-        benefits:
-          items:
-            $ref: "#/components/schemas/Benefit"
-          type:
-            - array
-            - "null"
-        faq:
-          items:
-            $ref: "#/components/schemas/FAQItem"
-          type:
-            - array
-            - "null"
-        painPoints:
-          items:
-            $ref: "#/components/schemas/PainPoint"
-          type:
-            - array
-            - "null"
-        phases:
-          items:
-            $ref: "#/components/schemas/Phase"
-          type:
-            - array
-            - "null"
         pricing:
           $ref: "#/components/schemas/Pricing"
         projects:
@@ -142,29 +74,8 @@ components:
           type:
             - array
             - "null"
-        requirements:
-          $ref: "#/components/schemas/Requirements"
-        techs:
-          items:
-            $ref: "#/components/schemas/Tech"
-          type:
-            - array
-            - "null"
-        workConditions:
-          items:
-            $ref: "#/components/schemas/WorkCondition"
-          type:
-            - array
-            - "null"
       required:
         - projects
-        - techs
-        - phases
-        - faq
-        - benefits
-        - requirements
-        - workConditions
-        - painPoints
         - pricing
       type: object
     Pricing:
@@ -250,53 +161,9 @@ components:
         - periodStart
         - team
         - role
+        - summary
         - techIds
         - phaseIds
-        - summary
-      type: object
-    Requirements:
-      additionalProperties: false
-      properties:
-        mustHave:
-          items:
-            type: string
-          type:
-            - array
-            - "null"
-        niceToHave:
-          items:
-            type: string
-          type:
-            - array
-            - "null"
-      required:
-        - mustHave
-        - niceToHave
-      type: object
-    Tech:
-      additionalProperties: false
-      properties:
-        category:
-          type: string
-        id:
-          type: string
-        label:
-          type: string
-      required:
-        - id
-        - label
-        - category
-      type: object
-    WorkCondition:
-      additionalProperties: false
-      properties:
-        label:
-          type: string
-        value:
-          type: string
-      required:
-        - label
-        - value
       type: object
 info:
   title: Resume 2026 API
@@ -305,7 +172,7 @@ openapi: 3.1.0
 paths:
   /api/portfolio:
     get:
-      description: Returns projects, techs, phases, FAQ, sections, and pricing in one response.
+      description: Returns the projects and the pricing plan associated with the authenticated user.
       operationId: get-portfolio
       parameters:
         - description: Pre-shared referral code

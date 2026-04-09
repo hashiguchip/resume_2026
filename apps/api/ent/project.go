@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -29,39 +30,13 @@ type Project struct {
 	Role string `json:"role,omitempty"`
 	// Summary holds the value of the "summary" field.
 	Summary string `json:"summary,omitempty"`
-	// Edges holds the relations/edges for other nodes in the graph.
-	// The values are being populated by the ProjectQuery when eager-loading is set.
-	Edges        ProjectEdges `json:"edges"`
+	// TechIds holds the value of the "tech_ids" field.
+	TechIds []string `json:"tech_ids,omitempty"`
+	// PhaseIds holds the value of the "phase_ids" field.
+	PhaseIds []string `json:"phase_ids,omitempty"`
+	// DisplayOrder holds the value of the "display_order" field.
+	DisplayOrder int `json:"display_order,omitempty"`
 	selectValues sql.SelectValues
-}
-
-// ProjectEdges holds the relations/edges for other nodes in the graph.
-type ProjectEdges struct {
-	// Techs holds the value of the techs edge.
-	Techs []*Tech `json:"techs,omitempty"`
-	// Phases holds the value of the phases edge.
-	Phases []*Phase `json:"phases,omitempty"`
-	// loadedTypes holds the information for reporting if a
-	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
-}
-
-// TechsOrErr returns the Techs value or an error if the edge
-// was not loaded in eager-loading.
-func (e ProjectEdges) TechsOrErr() ([]*Tech, error) {
-	if e.loadedTypes[0] {
-		return e.Techs, nil
-	}
-	return nil, &NotLoadedError{edge: "techs"}
-}
-
-// PhasesOrErr returns the Phases value or an error if the edge
-// was not loaded in eager-loading.
-func (e ProjectEdges) PhasesOrErr() ([]*Phase, error) {
-	if e.loadedTypes[1] {
-		return e.Phases, nil
-	}
-	return nil, &NotLoadedError{edge: "phases"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -69,6 +44,10 @@ func (*Project) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case project.FieldTechIds, project.FieldPhaseIds:
+			values[i] = new([]byte)
+		case project.FieldDisplayOrder:
+			values[i] = new(sql.NullInt64)
 		case project.FieldID, project.FieldTitle, project.FieldTeam, project.FieldRole, project.FieldSummary:
 			values[i] = new(sql.NullString)
 		case project.FieldPeriodStart, project.FieldPeriodEnd:
@@ -131,6 +110,28 @@ func (_m *Project) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Summary = value.String
 			}
+		case project.FieldTechIds:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field tech_ids", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.TechIds); err != nil {
+					return fmt.Errorf("unmarshal field tech_ids: %w", err)
+				}
+			}
+		case project.FieldPhaseIds:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field phase_ids", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.PhaseIds); err != nil {
+					return fmt.Errorf("unmarshal field phase_ids: %w", err)
+				}
+			}
+		case project.FieldDisplayOrder:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field display_order", values[i])
+			} else if value.Valid {
+				_m.DisplayOrder = int(value.Int64)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -142,16 +143,6 @@ func (_m *Project) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (_m *Project) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
-}
-
-// QueryTechs queries the "techs" edge of the Project entity.
-func (_m *Project) QueryTechs() *TechQuery {
-	return NewProjectClient(_m.config).QueryTechs(_m)
-}
-
-// QueryPhases queries the "phases" edge of the Project entity.
-func (_m *Project) QueryPhases() *PhaseQuery {
-	return NewProjectClient(_m.config).QueryPhases(_m)
 }
 
 // Update returns a builder for updating this Project.
@@ -196,6 +187,15 @@ func (_m *Project) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("summary=")
 	builder.WriteString(_m.Summary)
+	builder.WriteString(", ")
+	builder.WriteString("tech_ids=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TechIds))
+	builder.WriteString(", ")
+	builder.WriteString("phase_ids=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PhaseIds))
+	builder.WriteString(", ")
+	builder.WriteString("display_order=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DisplayOrder))
 	builder.WriteByte(')')
 	return builder.String()
 }

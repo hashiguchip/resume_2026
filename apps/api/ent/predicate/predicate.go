@@ -6,18 +6,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
-// Benefit is the predicate function for benefit builders.
-type Benefit func(*sql.Selector)
-
-// FAQItem is the predicate function for faqitem builders.
-type FAQItem func(*sql.Selector)
-
-// PainPoint is the predicate function for painpoint builders.
-type PainPoint func(*sql.Selector)
-
-// Phase is the predicate function for phase builders.
-type Phase func(*sql.Selector)
-
 // Pricing is the predicate function for pricing builders.
 type Pricing func(*sql.Selector)
 
@@ -27,11 +15,5 @@ type PricingPattern func(*sql.Selector)
 // Project is the predicate function for project builders.
 type Project func(*sql.Selector)
 
-// Requirement is the predicate function for requirement builders.
-type Requirement func(*sql.Selector)
-
-// Tech is the predicate function for tech builders.
-type Tech func(*sql.Selector)
-
-// WorkCondition is the predicate function for workcondition builders.
-type WorkCondition func(*sql.Selector)
+// User is the predicate function for user builders.
+type User func(*sql.Selector)

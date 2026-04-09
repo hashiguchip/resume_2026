@@ -10,21 +10,25 @@ import (
 	"github.com/hashiguchip/resume_2026/apps/api/internal/repository"
 )
 
-const (
-	// echo -n "test" | shasum -a 256
-	testHash = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
-	testCode = "test"
-)
+const testCode = "test"
+
+// stubUserRepo は in-memory な UserRepository 実装。
+// testCode のみを valid として受け付ける。
+type stubUserRepo struct{}
+
+func (stubUserRepo) FindByCode(_ context.Context, code string) (*repository.User, error) {
+	if code == testCode {
+		return &repository.User{ID: 1, Label: "test", Code: code}, nil
+	}
+	return nil, repository.ErrUserNotFound
+}
 
 // stubRepo は in-memory な PortfolioRepository 実装 (テスト専用)。
-//
-// PR 2 で testcontainers-go ベースの integration test が入った後も、
-// 軽量な unit test 用途では引き続き使える想定。
 type stubRepo struct {
 	portfolio *repository.Portfolio
 }
 
-func (s *stubRepo) GetPortfolio(_ context.Context) (*repository.Portfolio, error) {
+func (s *stubRepo) GetPortfolioForUser(_ context.Context, _ int) (*repository.Portfolio, error) {
 	if s.portfolio == nil {
 		return &repository.Portfolio{}, nil
 	}
@@ -37,10 +41,9 @@ func setupServer(t *testing.T, repo repository.PortfolioRepository) http.Handler
 		repo = &stubRepo{}
 	}
 	cfg := &config{
-		AuthHashes:  []string{testHash},
 		CORSOrigins: []string{"http://localhost:3000"},
 	}
-	h, err := newServer(cfg, repo)
+	h, err := newServer(cfg, repo, stubUserRepo{})
 	if err != nil {
 		t.Fatalf("newServer: %v", err)
 	}
@@ -64,9 +67,6 @@ func TestHealthz(t *testing.T) {
 func TestPortfolioAuth(t *testing.T) {
 	samplePortfolio := &repository.Portfolio{
 		Projects: []repository.Project{{ID: "p1", Title: "Sample"}},
-		Techs:    []repository.Tech{{ID: "t1", Label: "Sample", Category: "language"}},
-		Phases:   []repository.Phase{{ID: "ph1", Label: "Sample"}},
-		FAQ:      []repository.FAQItem{{Q: "?", A: "!"}},
 		Pricing:  repository.Pricing{Rate: "1円/h"},
 	}
 
@@ -107,15 +107,6 @@ func TestPortfolioAuth(t *testing.T) {
 		}
 		if len(p.Projects) == 0 {
 			t.Fatal("expected projects to be populated")
-		}
-		if len(p.Techs) == 0 {
-			t.Fatal("expected techs to be populated")
-		}
-		if len(p.Phases) == 0 {
-			t.Fatal("expected phases to be populated")
-		}
-		if len(p.FAQ) == 0 {
-			t.Fatal("expected faq to be populated")
 		}
 		if p.Pricing.Rate == "" {
 			t.Fatal("expected pricing.rate to be populated")

@@ -10,11 +10,10 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/phase"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/predicate"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/project"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/tech"
 )
 
 // ProjectUpdate is the builder for updating Project entities.
@@ -120,81 +119,54 @@ func (_u *ProjectUpdate) SetNillableSummary(v *string) *ProjectUpdate {
 	return _u
 }
 
-// AddTechIDs adds the "techs" edge to the Tech entity by IDs.
-func (_u *ProjectUpdate) AddTechIDs(ids ...string) *ProjectUpdate {
-	_u.mutation.AddTechIDs(ids...)
+// SetTechIds sets the "tech_ids" field.
+func (_u *ProjectUpdate) SetTechIds(v []string) *ProjectUpdate {
+	_u.mutation.SetTechIds(v)
 	return _u
 }
 
-// AddTechs adds the "techs" edges to the Tech entity.
-func (_u *ProjectUpdate) AddTechs(v ...*Tech) *ProjectUpdate {
-	ids := make([]string, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddTechIDs(ids...)
-}
-
-// AddPhaseIDs adds the "phases" edge to the Phase entity by IDs.
-func (_u *ProjectUpdate) AddPhaseIDs(ids ...string) *ProjectUpdate {
-	_u.mutation.AddPhaseIDs(ids...)
+// AppendTechIds appends value to the "tech_ids" field.
+func (_u *ProjectUpdate) AppendTechIds(v []string) *ProjectUpdate {
+	_u.mutation.AppendTechIds(v)
 	return _u
 }
 
-// AddPhases adds the "phases" edges to the Phase entity.
-func (_u *ProjectUpdate) AddPhases(v ...*Phase) *ProjectUpdate {
-	ids := make([]string, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+// SetPhaseIds sets the "phase_ids" field.
+func (_u *ProjectUpdate) SetPhaseIds(v []string) *ProjectUpdate {
+	_u.mutation.SetPhaseIds(v)
+	return _u
+}
+
+// AppendPhaseIds appends value to the "phase_ids" field.
+func (_u *ProjectUpdate) AppendPhaseIds(v []string) *ProjectUpdate {
+	_u.mutation.AppendPhaseIds(v)
+	return _u
+}
+
+// SetDisplayOrder sets the "display_order" field.
+func (_u *ProjectUpdate) SetDisplayOrder(v int) *ProjectUpdate {
+	_u.mutation.ResetDisplayOrder()
+	_u.mutation.SetDisplayOrder(v)
+	return _u
+}
+
+// SetNillableDisplayOrder sets the "display_order" field if the given value is not nil.
+func (_u *ProjectUpdate) SetNillableDisplayOrder(v *int) *ProjectUpdate {
+	if v != nil {
+		_u.SetDisplayOrder(*v)
 	}
-	return _u.AddPhaseIDs(ids...)
+	return _u
+}
+
+// AddDisplayOrder adds value to the "display_order" field.
+func (_u *ProjectUpdate) AddDisplayOrder(v int) *ProjectUpdate {
+	_u.mutation.AddDisplayOrder(v)
+	return _u
 }
 
 // Mutation returns the ProjectMutation object of the builder.
 func (_u *ProjectUpdate) Mutation() *ProjectMutation {
 	return _u.mutation
-}
-
-// ClearTechs clears all "techs" edges to the Tech entity.
-func (_u *ProjectUpdate) ClearTechs() *ProjectUpdate {
-	_u.mutation.ClearTechs()
-	return _u
-}
-
-// RemoveTechIDs removes the "techs" edge to Tech entities by IDs.
-func (_u *ProjectUpdate) RemoveTechIDs(ids ...string) *ProjectUpdate {
-	_u.mutation.RemoveTechIDs(ids...)
-	return _u
-}
-
-// RemoveTechs removes "techs" edges to Tech entities.
-func (_u *ProjectUpdate) RemoveTechs(v ...*Tech) *ProjectUpdate {
-	ids := make([]string, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveTechIDs(ids...)
-}
-
-// ClearPhases clears all "phases" edges to the Phase entity.
-func (_u *ProjectUpdate) ClearPhases() *ProjectUpdate {
-	_u.mutation.ClearPhases()
-	return _u
-}
-
-// RemovePhaseIDs removes the "phases" edge to Phase entities by IDs.
-func (_u *ProjectUpdate) RemovePhaseIDs(ids ...string) *ProjectUpdate {
-	_u.mutation.RemovePhaseIDs(ids...)
-	return _u
-}
-
-// RemovePhases removes "phases" edges to Phase entities.
-func (_u *ProjectUpdate) RemovePhases(v ...*Phase) *ProjectUpdate {
-	ids := make([]string, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemovePhaseIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -277,95 +249,27 @@ func (_u *ProjectUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Summary(); ok {
 		_spec.SetField(project.FieldSummary, field.TypeString, value)
 	}
-	if _u.mutation.TechsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   project.TechsTable,
-			Columns: project.TechsPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(tech.FieldID, field.TypeString),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	if value, ok := _u.mutation.TechIds(); ok {
+		_spec.SetField(project.FieldTechIds, field.TypeJSON, value)
 	}
-	if nodes := _u.mutation.RemovedTechsIDs(); len(nodes) > 0 && !_u.mutation.TechsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   project.TechsTable,
-			Columns: project.TechsPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(tech.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	if value, ok := _u.mutation.AppendedTechIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, project.FieldTechIds, value)
+		})
 	}
-	if nodes := _u.mutation.TechsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   project.TechsTable,
-			Columns: project.TechsPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(tech.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	if value, ok := _u.mutation.PhaseIds(); ok {
+		_spec.SetField(project.FieldPhaseIds, field.TypeJSON, value)
 	}
-	if _u.mutation.PhasesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   project.PhasesTable,
-			Columns: project.PhasesPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(phase.FieldID, field.TypeString),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	if value, ok := _u.mutation.AppendedPhaseIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, project.FieldPhaseIds, value)
+		})
 	}
-	if nodes := _u.mutation.RemovedPhasesIDs(); len(nodes) > 0 && !_u.mutation.PhasesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   project.PhasesTable,
-			Columns: project.PhasesPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(phase.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	if value, ok := _u.mutation.DisplayOrder(); ok {
+		_spec.SetField(project.FieldDisplayOrder, field.TypeInt, value)
 	}
-	if nodes := _u.mutation.PhasesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   project.PhasesTable,
-			Columns: project.PhasesPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(phase.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	if value, ok := _u.mutation.AddedDisplayOrder(); ok {
+		_spec.AddField(project.FieldDisplayOrder, field.TypeInt, value)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -477,81 +381,54 @@ func (_u *ProjectUpdateOne) SetNillableSummary(v *string) *ProjectUpdateOne {
 	return _u
 }
 
-// AddTechIDs adds the "techs" edge to the Tech entity by IDs.
-func (_u *ProjectUpdateOne) AddTechIDs(ids ...string) *ProjectUpdateOne {
-	_u.mutation.AddTechIDs(ids...)
+// SetTechIds sets the "tech_ids" field.
+func (_u *ProjectUpdateOne) SetTechIds(v []string) *ProjectUpdateOne {
+	_u.mutation.SetTechIds(v)
 	return _u
 }
 
-// AddTechs adds the "techs" edges to the Tech entity.
-func (_u *ProjectUpdateOne) AddTechs(v ...*Tech) *ProjectUpdateOne {
-	ids := make([]string, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddTechIDs(ids...)
-}
-
-// AddPhaseIDs adds the "phases" edge to the Phase entity by IDs.
-func (_u *ProjectUpdateOne) AddPhaseIDs(ids ...string) *ProjectUpdateOne {
-	_u.mutation.AddPhaseIDs(ids...)
+// AppendTechIds appends value to the "tech_ids" field.
+func (_u *ProjectUpdateOne) AppendTechIds(v []string) *ProjectUpdateOne {
+	_u.mutation.AppendTechIds(v)
 	return _u
 }
 
-// AddPhases adds the "phases" edges to the Phase entity.
-func (_u *ProjectUpdateOne) AddPhases(v ...*Phase) *ProjectUpdateOne {
-	ids := make([]string, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+// SetPhaseIds sets the "phase_ids" field.
+func (_u *ProjectUpdateOne) SetPhaseIds(v []string) *ProjectUpdateOne {
+	_u.mutation.SetPhaseIds(v)
+	return _u
+}
+
+// AppendPhaseIds appends value to the "phase_ids" field.
+func (_u *ProjectUpdateOne) AppendPhaseIds(v []string) *ProjectUpdateOne {
+	_u.mutation.AppendPhaseIds(v)
+	return _u
+}
+
+// SetDisplayOrder sets the "display_order" field.
+func (_u *ProjectUpdateOne) SetDisplayOrder(v int) *ProjectUpdateOne {
+	_u.mutation.ResetDisplayOrder()
+	_u.mutation.SetDisplayOrder(v)
+	return _u
+}
+
+// SetNillableDisplayOrder sets the "display_order" field if the given value is not nil.
+func (_u *ProjectUpdateOne) SetNillableDisplayOrder(v *int) *ProjectUpdateOne {
+	if v != nil {
+		_u.SetDisplayOrder(*v)
 	}
-	return _u.AddPhaseIDs(ids...)
+	return _u
+}
+
+// AddDisplayOrder adds value to the "display_order" field.
+func (_u *ProjectUpdateOne) AddDisplayOrder(v int) *ProjectUpdateOne {
+	_u.mutation.AddDisplayOrder(v)
+	return _u
 }
 
 // Mutation returns the ProjectMutation object of the builder.
 func (_u *ProjectUpdateOne) Mutation() *ProjectMutation {
 	return _u.mutation
-}
-
-// ClearTechs clears all "techs" edges to the Tech entity.
-func (_u *ProjectUpdateOne) ClearTechs() *ProjectUpdateOne {
-	_u.mutation.ClearTechs()
-	return _u
-}
-
-// RemoveTechIDs removes the "techs" edge to Tech entities by IDs.
-func (_u *ProjectUpdateOne) RemoveTechIDs(ids ...string) *ProjectUpdateOne {
-	_u.mutation.RemoveTechIDs(ids...)
-	return _u
-}
-
-// RemoveTechs removes "techs" edges to Tech entities.
-func (_u *ProjectUpdateOne) RemoveTechs(v ...*Tech) *ProjectUpdateOne {
-	ids := make([]string, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveTechIDs(ids...)
-}
-
-// ClearPhases clears all "phases" edges to the Phase entity.
-func (_u *ProjectUpdateOne) ClearPhases() *ProjectUpdateOne {
-	_u.mutation.ClearPhases()
-	return _u
-}
-
-// RemovePhaseIDs removes the "phases" edge to Phase entities by IDs.
-func (_u *ProjectUpdateOne) RemovePhaseIDs(ids ...string) *ProjectUpdateOne {
-	_u.mutation.RemovePhaseIDs(ids...)
-	return _u
-}
-
-// RemovePhases removes "phases" edges to Phase entities.
-func (_u *ProjectUpdateOne) RemovePhases(v ...*Phase) *ProjectUpdateOne {
-	ids := make([]string, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemovePhaseIDs(ids...)
 }
 
 // Where appends a list predicates to the ProjectUpdate builder.
@@ -664,95 +541,27 @@ func (_u *ProjectUpdateOne) sqlSave(ctx context.Context) (_node *Project, err er
 	if value, ok := _u.mutation.Summary(); ok {
 		_spec.SetField(project.FieldSummary, field.TypeString, value)
 	}
-	if _u.mutation.TechsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   project.TechsTable,
-			Columns: project.TechsPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(tech.FieldID, field.TypeString),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	if value, ok := _u.mutation.TechIds(); ok {
+		_spec.SetField(project.FieldTechIds, field.TypeJSON, value)
 	}
-	if nodes := _u.mutation.RemovedTechsIDs(); len(nodes) > 0 && !_u.mutation.TechsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   project.TechsTable,
-			Columns: project.TechsPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(tech.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	if value, ok := _u.mutation.AppendedTechIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, project.FieldTechIds, value)
+		})
 	}
-	if nodes := _u.mutation.TechsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   project.TechsTable,
-			Columns: project.TechsPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(tech.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	if value, ok := _u.mutation.PhaseIds(); ok {
+		_spec.SetField(project.FieldPhaseIds, field.TypeJSON, value)
 	}
-	if _u.mutation.PhasesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   project.PhasesTable,
-			Columns: project.PhasesPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(phase.FieldID, field.TypeString),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	if value, ok := _u.mutation.AppendedPhaseIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, project.FieldPhaseIds, value)
+		})
 	}
-	if nodes := _u.mutation.RemovedPhasesIDs(); len(nodes) > 0 && !_u.mutation.PhasesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   project.PhasesTable,
-			Columns: project.PhasesPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(phase.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	if value, ok := _u.mutation.DisplayOrder(); ok {
+		_spec.SetField(project.FieldDisplayOrder, field.TypeInt, value)
 	}
-	if nodes := _u.mutation.PhasesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   project.PhasesTable,
-			Columns: project.PhasesPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(phase.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	if value, ok := _u.mutation.AddedDisplayOrder(); ok {
+		_spec.AddField(project.FieldDisplayOrder, field.TypeInt, value)
 	}
 	_node = &Project{config: _u.config}
 	_spec.Assign = _node.assignValues

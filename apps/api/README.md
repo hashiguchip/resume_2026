@@ -15,7 +15,7 @@
 | Method | Path | 用途 |
 | --- | --- | --- |
 | `GET` | `/healthz` | liveness probe |
-| `GET` | `/api/portfolio` | aggregate portfolio (`X-Referral-Code` 必須) |
+| `GET` | `/api/portfolio` | 認証 user に紐づく projects + pricing (`X-Referral-Code` 必須) |
 
 ## Local setup
 
@@ -30,8 +30,10 @@ mise run ent:diff initial
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/resume_2026?sslmode=disable \
   mise run migrate:up
 
-# 4. dev server 起動
-AUTH_CODE_HASHES=<your-sha256-hash> \
+# 4. seed を投入 (referral code を含む users もここで入る)
+mise run seed:apply
+
+# 5. dev server 起動
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/resume_2026?sslmode=disable \
   mise run dev:api
 ```
@@ -53,8 +55,35 @@ DATABASE_URL=postgres://postgres:postgres@localhost:5432/resume_2026?sslmode=dis
 | --- | --- | --- |
 | `PORT` | 任意 | 待受ポート (default `8080`) |
 | `DATABASE_URL` | **必須** | Postgres DSN (e.g. `postgres://user:pass@host/db?sslmode=...`) |
-| `AUTH_CODE_HASHES` | **必須** | カンマ区切りの SHA-256 hash。`echo -n "コード" \| shasum -a 256` で生成 |
 | `CORS_ORIGINS` | 任意 | カンマ区切りの許可 origin (default `https://hashiguchip.github.io`) |
+
+## Authentication
+
+`/api/portfolio` は `X-Referral-Code` header を必須とする。コード (= ユーザー) は
+`users` テーブルに **plaintext で** 格納される。
+
+- ハッシュ化はしない。本サイトの脅威モデル (portfolio 閲覧 gate) では plaintext で
+  十分と判断した。流出シナリオの最悪は単価情報が見える程度で、operator が許容済み。
+- リポジトリ at-rest は `apps/api/seed/portfolio.yaml` を SOPS + age で暗号化することで
+  保護する (下の Seed セクション参照)。
+- middleware は `users.code = $1 AND revoked_at IS NULL` で lookup する。一致した
+  ユーザーは request context に格納される (`middleware.UserFromContext`)。
+- 各 user は `pricings` の 1 行に紐づく (N:1)。`/api/portfolio` は context から
+  user を取り出し、その user の pricing と全 projects を返す。
+
+サンプル seed (`apps/api/seed/portfolio.yaml.example`) には固定の `proto` user
+(referral code `proto`) が含まれており、橋口の手元動作確認に使う。
+
+### ユーザー追加 / revoke
+
+```sh
+sops apps/api/seed/portfolio.yaml
+# users: セクションに新しい label / code を追加 (revoke なら revoked_at を設定)
+mise run seed:apply
+```
+
+`cmd/seed` は単一 transaction で全テーブルを delete → insert する idempotent 投入なので、
+seed YAML が DB の単一 source of truth になる。
 
 ## Schema / migrations
 

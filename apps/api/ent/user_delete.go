@@ -8,30 +8,30 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/faqitem"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/predicate"
+	"github.com/hashiguchip/resume_2026/apps/api/ent/user"
 )
 
-// FAQItemDelete is the builder for deleting a FAQItem entity.
-type FAQItemDelete struct {
+// UserDelete is the builder for deleting a User entity.
+type UserDelete struct {
 	config
 	hooks    []Hook
-	mutation *FAQItemMutation
+	mutation *UserMutation
 }
 
-// Where appends a list predicates to the FAQItemDelete builder.
-func (_d *FAQItemDelete) Where(ps ...predicate.FAQItem) *FAQItemDelete {
+// Where appends a list predicates to the UserDelete builder.
+func (_d *UserDelete) Where(ps ...predicate.User) *UserDelete {
 	_d.mutation.Where(ps...)
 	return _d
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (_d *FAQItemDelete) Exec(ctx context.Context) (int, error) {
+func (_d *UserDelete) Exec(ctx context.Context) (int, error) {
 	return withHooks(ctx, _d.sqlExec, _d.mutation, _d.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *FAQItemDelete) ExecX(ctx context.Context) int {
+func (_d *UserDelete) ExecX(ctx context.Context) int {
 	n, err := _d.Exec(ctx)
 	if err != nil {
 		panic(err)
@@ -39,8 +39,8 @@ func (_d *FAQItemDelete) ExecX(ctx context.Context) int {
 	return n
 }
 
-func (_d *FAQItemDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(faqitem.Table, sqlgraph.NewFieldSpec(faqitem.FieldID, field.TypeInt))
+func (_d *UserDelete) sqlExec(ctx context.Context) (int, error) {
+	_spec := sqlgraph.NewDeleteSpec(user.Table, sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt))
 	if ps := _d.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -56,32 +56,32 @@ func (_d *FAQItemDelete) sqlExec(ctx context.Context) (int, error) {
 	return affected, err
 }
 
-// FAQItemDeleteOne is the builder for deleting a single FAQItem entity.
-type FAQItemDeleteOne struct {
-	_d *FAQItemDelete
+// UserDeleteOne is the builder for deleting a single User entity.
+type UserDeleteOne struct {
+	_d *UserDelete
 }
 
-// Where appends a list predicates to the FAQItemDelete builder.
-func (_d *FAQItemDeleteOne) Where(ps ...predicate.FAQItem) *FAQItemDeleteOne {
+// Where appends a list predicates to the UserDelete builder.
+func (_d *UserDeleteOne) Where(ps ...predicate.User) *UserDeleteOne {
 	_d._d.mutation.Where(ps...)
 	return _d
 }
 
 // Exec executes the deletion query.
-func (_d *FAQItemDeleteOne) Exec(ctx context.Context) error {
+func (_d *UserDeleteOne) Exec(ctx context.Context) error {
 	n, err := _d._d.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
 	case n == 0:
-		return &NotFoundError{faqitem.Label}
+		return &NotFoundError{user.Label}
 	default:
 		return nil
 	}
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *FAQItemDeleteOne) ExecX(ctx context.Context) {
+func (_d *UserDeleteOne) ExecX(ctx context.Context) {
 	if err := _d.Exec(ctx); err != nil {
 		panic(err)
 	}

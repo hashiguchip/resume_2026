@@ -9,54 +9,6 @@ import (
 	"github.com/hashiguchip/resume_2026/apps/api/ent"
 )
 
-// The BenefitFunc type is an adapter to allow the use of ordinary
-// function as Benefit mutator.
-type BenefitFunc func(context.Context, *ent.BenefitMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f BenefitFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.BenefitMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BenefitMutation", m)
-}
-
-// The FAQItemFunc type is an adapter to allow the use of ordinary
-// function as FAQItem mutator.
-type FAQItemFunc func(context.Context, *ent.FAQItemMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f FAQItemFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.FAQItemMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FAQItemMutation", m)
-}
-
-// The PainPointFunc type is an adapter to allow the use of ordinary
-// function as PainPoint mutator.
-type PainPointFunc func(context.Context, *ent.PainPointMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f PainPointFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.PainPointMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PainPointMutation", m)
-}
-
-// The PhaseFunc type is an adapter to allow the use of ordinary
-// function as Phase mutator.
-type PhaseFunc func(context.Context, *ent.PhaseMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f PhaseFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.PhaseMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PhaseMutation", m)
-}
-
 // The PricingFunc type is an adapter to allow the use of ordinary
 // function as Pricing mutator.
 type PricingFunc func(context.Context, *ent.PricingMutation) (ent.Value, error)
@@ -93,40 +45,16 @@ func (f ProjectFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProjectMutation", m)
 }
 
-// The RequirementFunc type is an adapter to allow the use of ordinary
-// function as Requirement mutator.
-type RequirementFunc func(context.Context, *ent.RequirementMutation) (ent.Value, error)
+// The UserFunc type is an adapter to allow the use of ordinary
+// function as User mutator.
+type UserFunc func(context.Context, *ent.UserMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f RequirementFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.RequirementMutation); ok {
+func (f UserFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UserMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RequirementMutation", m)
-}
-
-// The TechFunc type is an adapter to allow the use of ordinary
-// function as Tech mutator.
-type TechFunc func(context.Context, *ent.TechMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f TechFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.TechMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TechMutation", m)
-}
-
-// The WorkConditionFunc type is an adapter to allow the use of ordinary
-// function as WorkCondition mutator.
-type WorkConditionFunc func(context.Context, *ent.WorkConditionMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f WorkConditionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.WorkConditionMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.WorkConditionMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserMutation", m)
 }
 
 // Condition is a hook condition function.

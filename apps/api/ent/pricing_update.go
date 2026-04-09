@@ -13,6 +13,7 @@ import (
 	"github.com/hashiguchip/resume_2026/apps/api/ent/predicate"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/pricing"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/pricingpattern"
+	"github.com/hashiguchip/resume_2026/apps/api/ent/user"
 )
 
 // PricingUpdate is the builder for updating Pricing entities.
@@ -25,6 +26,20 @@ type PricingUpdate struct {
 // Where appends a list predicates to the PricingUpdate builder.
 func (_u *PricingUpdate) Where(ps ...predicate.Pricing) *PricingUpdate {
 	_u.mutation.Where(ps...)
+	return _u
+}
+
+// SetLabel sets the "label" field.
+func (_u *PricingUpdate) SetLabel(v string) *PricingUpdate {
+	_u.mutation.SetLabel(v)
+	return _u
+}
+
+// SetNillableLabel sets the "label" field if the given value is not nil.
+func (_u *PricingUpdate) SetNillableLabel(v *string) *PricingUpdate {
+	if v != nil {
+		_u.SetLabel(*v)
+	}
 	return _u
 }
 
@@ -99,6 +114,21 @@ func (_u *PricingUpdate) AddPatterns(v ...*PricingPattern) *PricingUpdate {
 	return _u.AddPatternIDs(ids...)
 }
 
+// AddUserIDs adds the "users" edge to the User entity by IDs.
+func (_u *PricingUpdate) AddUserIDs(ids ...int) *PricingUpdate {
+	_u.mutation.AddUserIDs(ids...)
+	return _u
+}
+
+// AddUsers adds the "users" edges to the User entity.
+func (_u *PricingUpdate) AddUsers(v ...*User) *PricingUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddUserIDs(ids...)
+}
+
 // Mutation returns the PricingMutation object of the builder.
 func (_u *PricingUpdate) Mutation() *PricingMutation {
 	return _u.mutation
@@ -123,6 +153,27 @@ func (_u *PricingUpdate) RemovePatterns(v ...*PricingPattern) *PricingUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemovePatternIDs(ids...)
+}
+
+// ClearUsers clears all "users" edges to the User entity.
+func (_u *PricingUpdate) ClearUsers() *PricingUpdate {
+	_u.mutation.ClearUsers()
+	return _u
+}
+
+// RemoveUserIDs removes the "users" edge to User entities by IDs.
+func (_u *PricingUpdate) RemoveUserIDs(ids ...int) *PricingUpdate {
+	_u.mutation.RemoveUserIDs(ids...)
+	return _u
+}
+
+// RemoveUsers removes "users" edges to User entities.
+func (_u *PricingUpdate) RemoveUsers(v ...*User) *PricingUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveUserIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -154,6 +205,11 @@ func (_u *PricingUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *PricingUpdate) check() error {
+	if v, ok := _u.mutation.Label(); ok {
+		if err := pricing.LabelValidator(v); err != nil {
+			return &ValidationError{Name: "label", err: fmt.Errorf(`ent: validator failed for field "Pricing.label": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Rate(); ok {
 		if err := pricing.RateValidator(v); err != nil {
 			return &ValidationError{Name: "rate", err: fmt.Errorf(`ent: validator failed for field "Pricing.rate": %w`, err)}
@@ -183,6 +239,9 @@ func (_u *PricingUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := _u.mutation.Label(); ok {
+		_spec.SetField(pricing.FieldLabel, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Rate(); ok {
 		_spec.SetField(pricing.FieldRate, field.TypeString, value)
@@ -241,6 +300,51 @@ func (_u *PricingUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.UsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   pricing.UsersTable,
+			Columns: []string{pricing.UsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedUsersIDs(); len(nodes) > 0 && !_u.mutation.UsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   pricing.UsersTable,
+			Columns: []string{pricing.UsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   pricing.UsersTable,
+			Columns: []string{pricing.UsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{pricing.Label}
@@ -259,6 +363,20 @@ type PricingUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *PricingMutation
+}
+
+// SetLabel sets the "label" field.
+func (_u *PricingUpdateOne) SetLabel(v string) *PricingUpdateOne {
+	_u.mutation.SetLabel(v)
+	return _u
+}
+
+// SetNillableLabel sets the "label" field if the given value is not nil.
+func (_u *PricingUpdateOne) SetNillableLabel(v *string) *PricingUpdateOne {
+	if v != nil {
+		_u.SetLabel(*v)
+	}
+	return _u
 }
 
 // SetRate sets the "rate" field.
@@ -332,6 +450,21 @@ func (_u *PricingUpdateOne) AddPatterns(v ...*PricingPattern) *PricingUpdateOne 
 	return _u.AddPatternIDs(ids...)
 }
 
+// AddUserIDs adds the "users" edge to the User entity by IDs.
+func (_u *PricingUpdateOne) AddUserIDs(ids ...int) *PricingUpdateOne {
+	_u.mutation.AddUserIDs(ids...)
+	return _u
+}
+
+// AddUsers adds the "users" edges to the User entity.
+func (_u *PricingUpdateOne) AddUsers(v ...*User) *PricingUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddUserIDs(ids...)
+}
+
 // Mutation returns the PricingMutation object of the builder.
 func (_u *PricingUpdateOne) Mutation() *PricingMutation {
 	return _u.mutation
@@ -356,6 +489,27 @@ func (_u *PricingUpdateOne) RemovePatterns(v ...*PricingPattern) *PricingUpdateO
 		ids[i] = v[i].ID
 	}
 	return _u.RemovePatternIDs(ids...)
+}
+
+// ClearUsers clears all "users" edges to the User entity.
+func (_u *PricingUpdateOne) ClearUsers() *PricingUpdateOne {
+	_u.mutation.ClearUsers()
+	return _u
+}
+
+// RemoveUserIDs removes the "users" edge to User entities by IDs.
+func (_u *PricingUpdateOne) RemoveUserIDs(ids ...int) *PricingUpdateOne {
+	_u.mutation.RemoveUserIDs(ids...)
+	return _u
+}
+
+// RemoveUsers removes "users" edges to User entities.
+func (_u *PricingUpdateOne) RemoveUsers(v ...*User) *PricingUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveUserIDs(ids...)
 }
 
 // Where appends a list predicates to the PricingUpdate builder.
@@ -400,6 +554,11 @@ func (_u *PricingUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *PricingUpdateOne) check() error {
+	if v, ok := _u.mutation.Label(); ok {
+		if err := pricing.LabelValidator(v); err != nil {
+			return &ValidationError{Name: "label", err: fmt.Errorf(`ent: validator failed for field "Pricing.label": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Rate(); ok {
 		if err := pricing.RateValidator(v); err != nil {
 			return &ValidationError{Name: "rate", err: fmt.Errorf(`ent: validator failed for field "Pricing.rate": %w`, err)}
@@ -446,6 +605,9 @@ func (_u *PricingUpdateOne) sqlSave(ctx context.Context) (_node *Pricing, err er
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := _u.mutation.Label(); ok {
+		_spec.SetField(pricing.FieldLabel, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Rate(); ok {
 		_spec.SetField(pricing.FieldRate, field.TypeString, value)
@@ -497,6 +659,51 @@ func (_u *PricingUpdateOne) sqlSave(ctx context.Context) (_node *Pricing, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(pricingpattern.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.UsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   pricing.UsersTable,
+			Columns: []string{pricing.UsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedUsersIDs(); len(nodes) > 0 && !_u.mutation.UsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   pricing.UsersTable,
+			Columns: []string{pricing.UsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   pricing.UsersTable,
+			Columns: []string{pricing.UsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

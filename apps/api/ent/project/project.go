@@ -4,7 +4,6 @@ package project
 
 import (
 	"entgo.io/ent/dialect/sql"
-	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -24,22 +23,14 @@ const (
 	FieldRole = "role"
 	// FieldSummary holds the string denoting the summary field in the database.
 	FieldSummary = "summary"
-	// EdgeTechs holds the string denoting the techs edge name in mutations.
-	EdgeTechs = "techs"
-	// EdgePhases holds the string denoting the phases edge name in mutations.
-	EdgePhases = "phases"
+	// FieldTechIds holds the string denoting the tech_ids field in the database.
+	FieldTechIds = "tech_ids"
+	// FieldPhaseIds holds the string denoting the phase_ids field in the database.
+	FieldPhaseIds = "phase_ids"
+	// FieldDisplayOrder holds the string denoting the display_order field in the database.
+	FieldDisplayOrder = "display_order"
 	// Table holds the table name of the project in the database.
 	Table = "projects"
-	// TechsTable is the table that holds the techs relation/edge. The primary key declared below.
-	TechsTable = "project_techs"
-	// TechsInverseTable is the table name for the Tech entity.
-	// It exists in this package in order to avoid circular dependency with the "tech" package.
-	TechsInverseTable = "techs"
-	// PhasesTable is the table that holds the phases relation/edge. The primary key declared below.
-	PhasesTable = "project_phases"
-	// PhasesInverseTable is the table name for the Phase entity.
-	// It exists in this package in order to avoid circular dependency with the "phase" package.
-	PhasesInverseTable = "phases"
 )
 
 // Columns holds all SQL columns for project fields.
@@ -51,16 +42,10 @@ var Columns = []string{
 	FieldTeam,
 	FieldRole,
 	FieldSummary,
+	FieldTechIds,
+	FieldPhaseIds,
+	FieldDisplayOrder,
 }
-
-var (
-	// TechsPrimaryKey and TechsColumn2 are the table columns denoting the
-	// primary key for the techs relation (M2M).
-	TechsPrimaryKey = []string{"project_id", "tech_id"}
-	// PhasesPrimaryKey and PhasesColumn2 are the table columns denoting the
-	// primary key for the phases relation (M2M).
-	PhasesPrimaryKey = []string{"project_id", "phase_id"}
-)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -79,6 +64,12 @@ var (
 	TeamValidator func(string) error
 	// RoleValidator is a validator for the "role" field. It is called by the builders before save.
 	RoleValidator func(string) error
+	// DefaultTechIds holds the default value on creation for the "tech_ids" field.
+	DefaultTechIds []string
+	// DefaultPhaseIds holds the default value on creation for the "phase_ids" field.
+	DefaultPhaseIds []string
+	// DefaultDisplayOrder holds the default value on creation for the "display_order" field.
+	DefaultDisplayOrder int
 	// IDValidator is a validator for the "id" field. It is called by the builders before save.
 	IDValidator func(string) error
 )
@@ -121,44 +112,7 @@ func BySummary(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSummary, opts...).ToFunc()
 }
 
-// ByTechsCount orders the results by techs count.
-func ByTechsCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newTechsStep(), opts...)
-	}
-}
-
-// ByTechs orders the results by techs terms.
-func ByTechs(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newTechsStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
-// ByPhasesCount orders the results by phases count.
-func ByPhasesCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newPhasesStep(), opts...)
-	}
-}
-
-// ByPhases orders the results by phases terms.
-func ByPhases(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newPhasesStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-func newTechsStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(TechsInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2M, false, TechsTable, TechsPrimaryKey...),
-	)
-}
-func newPhasesStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(PhasesInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2M, false, PhasesTable, PhasesPrimaryKey...),
-	)
+// ByDisplayOrder orders the results by the display_order field.
+func ByDisplayOrder(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDisplayOrder, opts...).ToFunc()
 }

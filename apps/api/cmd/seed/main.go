@@ -15,20 +15,16 @@
 //  4. 全テーブルを削除 → YAML の内容を insert (idempotent: 何度実行しても同じ結果)
 //  5. commit
 //
-// 「UPSERT ではなく delete + insert」は意図的:
-//   - Project の M:N edge を OnConflict と組み合わせて綺麗に扱うのが面倒
-//   - section 系 (FAQ, Benefit, …) は natural key を持たないので UPSERT 不可
-//   - データ件数が小さく (~100 行)、seed は手動投入なので速度は問題にならない
-//   - delete + insert なら「YAML の状態 = DB の状態」が自明に保証される
-//     (UPSERT だと「YAML から消えた行を DB から消し忘れる」バグの余地が残る)
+// scope 縮小 reframe 後、seed は projects + pricings + users のみを扱う。
+// Tech / Phase / FAQ / Benefit / Requirement / WorkCondition / PainPoint は
+// frontend constants に直書きされており DB には載せない。
 //
 // 削除順序は FK 依存に従う:
 //
-//	projects (CASCADE で project_techs / project_phases も消える)
-//	  → techs / phases
-//	pricing_patterns (pricing_id は ON DELETE SET NULL なので親より先に消す)
+//	users (pricing_id を参照)
+//	  → pricing_patterns (pricing_id は ON DELETE SET NULL なので親より先)
 //	  → pricings
-//	faq_items / benefits / requirements / work_conditions / pain_points (FK 無し)
+//	projects (FK 無し)
 package main
 
 import (
@@ -41,14 +37,10 @@ import (
 	"strings"
 	"time"
 
-	"entgo.io/ent/dialect"
-	entsql "entgo.io/ent/dialect/sql"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/stdlib"
 	"gopkg.in/yaml.v3"
 
 	"github.com/hashiguchip/resume_2026/apps/api/ent"
-	"github.com/hashiguchip/resume_2026/apps/api/ent/requirement"
+	"github.com/hashiguchip/resume_2026/apps/api/internal/repository"
 )
 
 // seedFile は portfolio.yaml の root 構造。
@@ -58,76 +50,37 @@ import (
 // 日付フィールドは time.Time にしておく。yaml.v3 が `!!timestamp` (ISO date 等)
 // を自動的に Go の time.Time に変換してくれるので、`2024-01-01` でも
 // `2024-01-01T00:00:00Z` でも受け付けられる。
-// (SOPS は decrypt 時に日付を RFC3339 に正規化するので、両方扱える必要がある)
 type seedFile struct {
-	Techs          []seedTech          `yaml:"techs"`
-	Phases         []seedPhase         `yaml:"phases"`
-	Projects       []seedProject       `yaml:"projects"`
-	FAQ            []seedFAQItem       `yaml:"faq"`
-	Benefits       []seedBenefit       `yaml:"benefits"`
-	Requirements   seedRequirements    `yaml:"requirements"`
-	WorkConditions []seedWorkCondition `yaml:"work_conditions"`
-	PainPoints     []seedPainPoint     `yaml:"pain_points"`
-	Pricing        seedPricing         `yaml:"pricing"`
+	Projects []seedProject `yaml:"projects"`
+	Pricings []seedPricing `yaml:"pricings"`
+	Users    []seedUser    `yaml:"users"`
 }
 
-type seedTech struct {
-	ID           string `yaml:"id"`
-	Label        string `yaml:"label"`
-	Category     string `yaml:"category"`
-	DisplayOrder int    `yaml:"display_order"`
-}
-
-type seedPhase struct {
-	ID           string `yaml:"id"`
-	Label        string `yaml:"label"`
-	DisplayOrder int    `yaml:"display_order"`
+// seedUser は users テーブル 1 行分。referral code は plaintext で保持する。
+// pricing_label で pricings の中の 1 件を参照する (FK 整合性は validateSeed
+// で pre-check し、insertAll で label → id に解決して SetPricingID する)。
+type seedUser struct {
+	Label        string     `yaml:"label"`
+	Code         string     `yaml:"code"`
+	PricingLabel string     `yaml:"pricing_label"`
+	RevokedAt    *time.Time `yaml:"revoked_at"`
 }
 
 type seedProject struct {
-	ID          string     `yaml:"id"`
-	Title       string     `yaml:"title"`
-	PeriodStart time.Time  `yaml:"period_start"`
-	PeriodEnd   *time.Time `yaml:"period_end"` // nil = 現在進行中
-	Team        string     `yaml:"team"`
-	Role        string     `yaml:"role"`
-	Summary     string     `yaml:"summary"`
-	TechIDs     []string   `yaml:"tech_ids"`
-	PhaseIDs    []string   `yaml:"phase_ids"`
-}
-
-type seedFAQItem struct {
-	Question     string `yaml:"question"`
-	Answer       string `yaml:"answer"`
-	DisplayOrder int    `yaml:"display_order"`
-}
-
-type seedBenefit struct {
-	Title        string `yaml:"title"`
-	Description  string `yaml:"description"`
-	DisplayOrder int    `yaml:"display_order"`
-}
-
-// seedRequirements は must_have / nice_to_have の 2 リストを持つ。
-// 個々の要素は単なる string で、display_order は slice index から自動付番する。
-type seedRequirements struct {
-	MustHave   []string `yaml:"must_have"`
-	NiceToHave []string `yaml:"nice_to_have"`
-}
-
-type seedWorkCondition struct {
-	Label        string `yaml:"label"`
-	Value        string `yaml:"value"`
-	DisplayOrder int    `yaml:"display_order"`
-}
-
-type seedPainPoint struct {
-	Title        string `yaml:"title"`
-	Description  string `yaml:"description"`
-	DisplayOrder int    `yaml:"display_order"`
+	ID           string     `yaml:"id"`
+	Title        string     `yaml:"title"`
+	PeriodStart  time.Time  `yaml:"period_start"`
+	PeriodEnd    *time.Time `yaml:"period_end"` // nil = 現在進行中
+	Team         string     `yaml:"team"`
+	Role         string     `yaml:"role"`
+	Summary      string     `yaml:"summary"`
+	TechIDs      []string   `yaml:"tech_ids"`
+	PhaseIDs     []string   `yaml:"phase_ids"`
+	DisplayOrder int        `yaml:"display_order"`
 }
 
 type seedPricing struct {
+	Label        string               `yaml:"label"`
 	Rate         string               `yaml:"rate"`
 	BillingHours string               `yaml:"billing_hours"`
 	TrialRate    string               `yaml:"trial_rate"`
@@ -182,7 +135,7 @@ func main() {
 	}
 
 	// 4. ent client (pgxpool 経由) を構築
-	client, closeFn, err := openEntClient(ctx, databaseURL)
+	client, _, closeFn, err := repository.OpenEntClient(ctx, databaseURL)
 	if err != nil {
 		slog.Error("open ent client", "err", err)
 		os.Exit(1)
@@ -196,16 +149,9 @@ func main() {
 	}
 
 	slog.Info("seed applied",
-		"techs", len(seed.Techs),
-		"phases", len(seed.Phases),
 		"projects", len(seed.Projects),
-		"faq", len(seed.FAQ),
-		"benefits", len(seed.Benefits),
-		"must_have", len(seed.Requirements.MustHave),
-		"nice_to_have", len(seed.Requirements.NiceToHave),
-		"work_conditions", len(seed.WorkConditions),
-		"pain_points", len(seed.PainPoints),
-		"pricing_patterns", len(seed.Pricing.Patterns),
+		"pricings", len(seed.Pricings),
+		"users", len(seed.Users),
 	)
 }
 
@@ -216,9 +162,6 @@ func main() {
 // が ~100 増え、cmd/seed binary が ~65MB 太る。age 1 つしか使わないので
 // shell-out が圧倒的に軽い。`sops` CLI は seed 編集 (sops apps/api/seed/*.yaml)
 // にも必要なので、追加依存にはならない。
-//
-// PATH 解決は `mise run seed:apply` 経由を前提とする。直接 `go run ./cmd/seed`
-// で起動すると homebrew 等の別バージョンが当たる可能性あり (README 参照)。
 func decryptYAML(ctx context.Context, path string) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, "sops", "-d", path)
 	var stderr bytes.Buffer
@@ -230,63 +173,13 @@ func decryptYAML(ctx context.Context, path string) ([]byte, error) {
 	return out, nil
 }
 
-// openEntClient は pgxpool を作って ent client を組み立て、
-// 全てを解放する closeFn を返す。
-//
-// repository.NewPostgres と同じ手順だが、internal/ を改変したくないので
-// この cmd のために 1 回だけ複製している。
-func openEntClient(ctx context.Context, databaseURL string) (*ent.Client, func(), error) {
-	cfg, err := pgxpool.ParseConfig(databaseURL)
-	if err != nil {
-		return nil, nil, fmt.Errorf("parse database url: %w", err)
-	}
-	pool, err := pgxpool.NewWithConfig(ctx, cfg)
-	if err != nil {
-		return nil, nil, fmt.Errorf("create pgxpool: %w", err)
-	}
-	if err := pool.Ping(ctx); err != nil {
-		pool.Close()
-		return nil, nil, fmt.Errorf("ping postgres: %w", err)
-	}
-	db := stdlib.OpenDBFromPool(pool)
-	drv := entsql.OpenDB(dialect.Postgres, db)
-	client := ent.NewClient(ent.Driver(drv))
-	closeFn := func() {
-		_ = client.Close()
-		pool.Close()
-	}
-	return client, closeFn, nil
-}
-
 // validateSeed は DB アクセス前に YAML 内の整合性をチェックする。
 //
-//   - tech / phase / project の id が空でなく重複していない
-//   - project に period_start が指定されている (yaml.v3 の自動 parse 任せだと
-//     値が空のとき zero time が入るので明示的に検出する)
-//   - project.tech_ids / phase_ids が tech / phase の id と一致する
+//   - project の id が空でなく重複していない、period_start が指定されている
+//   - pricing の label が空でなく重複していない
+//   - user の label / code が空でなく重複していない
+//   - user.pricing_label が pricings の中に存在する (FK 整合性 pre-check)
 func validateSeed(s *seedFile) error {
-	techIDs := make(map[string]struct{}, len(s.Techs))
-	for _, t := range s.Techs {
-		if t.ID == "" {
-			return fmt.Errorf("tech: empty id")
-		}
-		if _, dup := techIDs[t.ID]; dup {
-			return fmt.Errorf("tech: duplicate id %q", t.ID)
-		}
-		techIDs[t.ID] = struct{}{}
-	}
-
-	phaseIDs := make(map[string]struct{}, len(s.Phases))
-	for _, p := range s.Phases {
-		if p.ID == "" {
-			return fmt.Errorf("phase: empty id")
-		}
-		if _, dup := phaseIDs[p.ID]; dup {
-			return fmt.Errorf("phase: duplicate id %q", p.ID)
-		}
-		phaseIDs[p.ID] = struct{}{}
-	}
-
 	projectIDs := make(map[string]struct{}, len(s.Projects))
 	for _, p := range s.Projects {
 		if p.ID == "" {
@@ -299,15 +192,41 @@ func validateSeed(s *seedFile) error {
 		if p.PeriodStart.IsZero() {
 			return fmt.Errorf("project %q: missing period_start", p.ID)
 		}
-		for _, tid := range p.TechIDs {
-			if _, ok := techIDs[tid]; !ok {
-				return fmt.Errorf("project %q: unknown tech_id %q", p.ID, tid)
-			}
+	}
+
+	pricingLabels := make(map[string]struct{}, len(s.Pricings))
+	for _, p := range s.Pricings {
+		if p.Label == "" {
+			return fmt.Errorf("pricing: empty label")
 		}
-		for _, phid := range p.PhaseIDs {
-			if _, ok := phaseIDs[phid]; !ok {
-				return fmt.Errorf("project %q: unknown phase_id %q", p.ID, phid)
-			}
+		if _, dup := pricingLabels[p.Label]; dup {
+			return fmt.Errorf("pricing: duplicate label %q", p.Label)
+		}
+		pricingLabels[p.Label] = struct{}{}
+	}
+
+	userLabels := make(map[string]struct{}, len(s.Users))
+	userCodes := make(map[string]struct{}, len(s.Users))
+	for _, u := range s.Users {
+		if u.Label == "" {
+			return fmt.Errorf("user: empty label")
+		}
+		if u.Code == "" {
+			return fmt.Errorf("user %q: empty code", u.Label)
+		}
+		if _, dup := userLabels[u.Label]; dup {
+			return fmt.Errorf("user: duplicate label %q", u.Label)
+		}
+		if _, dup := userCodes[u.Code]; dup {
+			return fmt.Errorf("user: duplicate code (label %q)", u.Label)
+		}
+		userLabels[u.Label] = struct{}{}
+		userCodes[u.Code] = struct{}{}
+		if u.PricingLabel == "" {
+			return fmt.Errorf("user %q: empty pricing_label", u.Label)
+		}
+		if _, ok := pricingLabels[u.PricingLabel]; !ok {
+			return fmt.Errorf("user %q: unknown pricing_label %q", u.Label, u.PricingLabel)
 		}
 	}
 	return nil
@@ -344,18 +263,11 @@ func applySeed(ctx context.Context, client *ent.Client, s *seedFile) error {
 
 // clearAll は全テーブルを FK 依存順で削除する。
 //
-// projects → 残りの順。projects を消すと CASCADE で project_techs/phases も消える。
-// pricing_patterns は親より先に消す (pricing_id は ON DELETE SET NULL なので、
-// 親を先に消すと孤児パターンが残る)。
+// users → pricing_patterns → pricings の順 (users.pricing_id, patterns.pricing_id
+// が pricings を参照しているため)。projects は独立。
 func clearAll(ctx context.Context, tx *ent.Tx) error {
-	if _, err := tx.Project.Delete().Exec(ctx); err != nil {
-		return fmt.Errorf("delete projects: %w", err)
-	}
-	if _, err := tx.Tech.Delete().Exec(ctx); err != nil {
-		return fmt.Errorf("delete techs: %w", err)
-	}
-	if _, err := tx.Phase.Delete().Exec(ctx); err != nil {
-		return fmt.Errorf("delete phases: %w", err)
+	if _, err := tx.User.Delete().Exec(ctx); err != nil {
+		return fmt.Errorf("delete users: %w", err)
 	}
 	if _, err := tx.PricingPattern.Delete().Exec(ctx); err != nil {
 		return fmt.Errorf("delete pricing patterns: %w", err)
@@ -363,48 +275,45 @@ func clearAll(ctx context.Context, tx *ent.Tx) error {
 	if _, err := tx.Pricing.Delete().Exec(ctx); err != nil {
 		return fmt.Errorf("delete pricings: %w", err)
 	}
-	if _, err := tx.FAQItem.Delete().Exec(ctx); err != nil {
-		return fmt.Errorf("delete faq items: %w", err)
-	}
-	if _, err := tx.Benefit.Delete().Exec(ctx); err != nil {
-		return fmt.Errorf("delete benefits: %w", err)
-	}
-	if _, err := tx.Requirement.Delete().Exec(ctx); err != nil {
-		return fmt.Errorf("delete requirements: %w", err)
-	}
-	if _, err := tx.WorkCondition.Delete().Exec(ctx); err != nil {
-		return fmt.Errorf("delete work conditions: %w", err)
-	}
-	if _, err := tx.PainPoint.Delete().Exec(ctx); err != nil {
-		return fmt.Errorf("delete pain points: %w", err)
+	if _, err := tx.Project.Delete().Exec(ctx); err != nil {
+		return fmt.Errorf("delete projects: %w", err)
 	}
 	return nil
 }
 
 // insertAll は YAML の内容を依存順に投入する。
 //
-// Tech, Phase は edge なし → 先に作る。
-// Project は edge を持つので Tech / Phase の後。
-// Pricing は子の PricingPattern を作るので先に Pricing を作って ID を取る。
+// 1. Pricings を先に作って label → id の map を作る
+// 2. PricingPatterns を親 pricing の id で insert
+// 3. Projects は独立 (FK 無し)
+// 4. Users を pricing_label → id 解決して insert
 func insertAll(ctx context.Context, tx *ent.Tx, s *seedFile) error {
-	for _, t := range s.Techs {
-		if _, err := tx.Tech.Create().
-			SetID(t.ID).
-			SetLabel(t.Label).
-			SetCategory(t.Category).
-			SetDisplayOrder(t.DisplayOrder).
-			Save(ctx); err != nil {
-			return fmt.Errorf("create tech %q: %w", t.ID, err)
-		}
-	}
-
-	for _, p := range s.Phases {
-		if _, err := tx.Phase.Create().
-			SetID(p.ID).
+	pricingIDByLabel := make(map[string]int, len(s.Pricings))
+	for _, p := range s.Pricings {
+		row, err := tx.Pricing.Create().
 			SetLabel(p.Label).
-			SetDisplayOrder(p.DisplayOrder).
-			Save(ctx); err != nil {
-			return fmt.Errorf("create phase %q: %w", p.ID, err)
+			SetRate(p.Rate).
+			SetBillingHours(p.BillingHours).
+			SetTrialRate(p.TrialRate).
+			SetTrialNote(p.TrialNote).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("create pricing %q: %w", p.Label, err)
+		}
+		pricingIDByLabel[p.Label] = row.ID
+
+		for _, pat := range p.Patterns {
+			if _, err := tx.PricingPattern.Create().
+				SetLabel(pat.Label).
+				SetTrialFlex(pat.TrialFlex).
+				SetTrialPeriod(pat.TrialPeriod).
+				SetRegularFlex(pat.RegularFlex).
+				SetRegularPeriod(pat.RegularPeriod).
+				SetDisplayOrder(pat.DisplayOrder).
+				SetPricing(row).
+				Save(ctx); err != nil {
+				return fmt.Errorf("create pricing pattern %q (pricing=%q): %w", pat.Label, p.Label, err)
+			}
 		}
 	}
 
@@ -416,8 +325,9 @@ func insertAll(ctx context.Context, tx *ent.Tx, s *seedFile) error {
 			SetTeam(p.Team).
 			SetRole(p.Role).
 			SetSummary(p.Summary).
-			AddTechIDs(p.TechIDs...).
-			AddPhaseIDs(p.PhaseIDs...)
+			SetTechIds(p.TechIDs).
+			SetPhaseIds(p.PhaseIDs).
+			SetDisplayOrder(p.DisplayOrder)
 		if p.PeriodEnd != nil {
 			create.SetPeriodEnd(*p.PeriodEnd)
 		}
@@ -426,87 +336,16 @@ func insertAll(ctx context.Context, tx *ent.Tx, s *seedFile) error {
 		}
 	}
 
-	pricing, err := tx.Pricing.Create().
-		SetRate(s.Pricing.Rate).
-		SetBillingHours(s.Pricing.BillingHours).
-		SetTrialRate(s.Pricing.TrialRate).
-		SetTrialNote(s.Pricing.TrialNote).
-		Save(ctx)
-	if err != nil {
-		return fmt.Errorf("create pricing: %w", err)
-	}
-	for _, pat := range s.Pricing.Patterns {
-		if _, err := tx.PricingPattern.Create().
-			SetLabel(pat.Label).
-			SetTrialFlex(pat.TrialFlex).
-			SetTrialPeriod(pat.TrialPeriod).
-			SetRegularFlex(pat.RegularFlex).
-			SetRegularPeriod(pat.RegularPeriod).
-			SetDisplayOrder(pat.DisplayOrder).
-			SetPricing(pricing).
-			Save(ctx); err != nil {
-			return fmt.Errorf("create pricing pattern %q: %w", pat.Label, err)
+	for _, u := range s.Users {
+		create := tx.User.Create().
+			SetLabel(u.Label).
+			SetCode(u.Code).
+			SetPricingID(pricingIDByLabel[u.PricingLabel])
+		if u.RevokedAt != nil {
+			create.SetRevokedAt(*u.RevokedAt)
 		}
-	}
-
-	for _, f := range s.FAQ {
-		if _, err := tx.FAQItem.Create().
-			SetQuestion(f.Question).
-			SetAnswer(f.Answer).
-			SetDisplayOrder(f.DisplayOrder).
-			Save(ctx); err != nil {
-			return fmt.Errorf("create faq item: %w", err)
-		}
-	}
-
-	for _, b := range s.Benefits {
-		if _, err := tx.Benefit.Create().
-			SetTitle(b.Title).
-			SetDescription(b.Description).
-			SetDisplayOrder(b.DisplayOrder).
-			Save(ctx); err != nil {
-			return fmt.Errorf("create benefit %q: %w", b.Title, err)
-		}
-	}
-
-	// requirements は YAML では string list。slice index から display_order を付番して
-	// repository.Requirements に詰め直す側 (postgres.go) で kind 別に並ぶ。
-	for i, text := range s.Requirements.MustHave {
-		if _, err := tx.Requirement.Create().
-			SetKind(requirement.KindMustHave).
-			SetText(text).
-			SetDisplayOrder(i + 1).
-			Save(ctx); err != nil {
-			return fmt.Errorf("create must_have requirement: %w", err)
-		}
-	}
-	for i, text := range s.Requirements.NiceToHave {
-		if _, err := tx.Requirement.Create().
-			SetKind(requirement.KindNiceToHave).
-			SetText(text).
-			SetDisplayOrder(i + 1).
-			Save(ctx); err != nil {
-			return fmt.Errorf("create nice_to_have requirement: %w", err)
-		}
-	}
-
-	for _, w := range s.WorkConditions {
-		if _, err := tx.WorkCondition.Create().
-			SetLabel(w.Label).
-			SetValue(w.Value).
-			SetDisplayOrder(w.DisplayOrder).
-			Save(ctx); err != nil {
-			return fmt.Errorf("create work condition %q: %w", w.Label, err)
-		}
-	}
-
-	for _, p := range s.PainPoints {
-		if _, err := tx.PainPoint.Create().
-			SetTitle(p.Title).
-			SetDescription(p.Description).
-			SetDisplayOrder(p.DisplayOrder).
-			Save(ctx); err != nil {
-			return fmt.Errorf("create pain point %q: %w", p.Title, err)
+		if _, err := create.Save(ctx); err != nil {
+			return fmt.Errorf("create user %q: %w", u.Label, err)
 		}
 	}
 

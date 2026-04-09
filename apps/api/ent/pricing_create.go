@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/pricing"
 	"github.com/hashiguchip/resume_2026/apps/api/ent/pricingpattern"
+	"github.com/hashiguchip/resume_2026/apps/api/ent/user"
 )
 
 // PricingCreate is the builder for creating a Pricing entity.
@@ -18,6 +19,12 @@ type PricingCreate struct {
 	config
 	mutation *PricingMutation
 	hooks    []Hook
+}
+
+// SetLabel sets the "label" field.
+func (_c *PricingCreate) SetLabel(v string) *PricingCreate {
+	_c.mutation.SetLabel(v)
+	return _c
 }
 
 // SetRate sets the "rate" field.
@@ -59,6 +66,21 @@ func (_c *PricingCreate) AddPatterns(v ...*PricingPattern) *PricingCreate {
 	return _c.AddPatternIDs(ids...)
 }
 
+// AddUserIDs adds the "users" edge to the User entity by IDs.
+func (_c *PricingCreate) AddUserIDs(ids ...int) *PricingCreate {
+	_c.mutation.AddUserIDs(ids...)
+	return _c
+}
+
+// AddUsers adds the "users" edges to the User entity.
+func (_c *PricingCreate) AddUsers(v ...*User) *PricingCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddUserIDs(ids...)
+}
+
 // Mutation returns the PricingMutation object of the builder.
 func (_c *PricingCreate) Mutation() *PricingMutation {
 	return _c.mutation
@@ -93,6 +115,14 @@ func (_c *PricingCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *PricingCreate) check() error {
+	if _, ok := _c.mutation.Label(); !ok {
+		return &ValidationError{Name: "label", err: errors.New(`ent: missing required field "Pricing.label"`)}
+	}
+	if v, ok := _c.mutation.Label(); ok {
+		if err := pricing.LabelValidator(v); err != nil {
+			return &ValidationError{Name: "label", err: fmt.Errorf(`ent: validator failed for field "Pricing.label": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.Rate(); !ok {
 		return &ValidationError{Name: "rate", err: errors.New(`ent: missing required field "Pricing.rate"`)}
 	}
@@ -146,6 +176,10 @@ func (_c *PricingCreate) createSpec() (*Pricing, *sqlgraph.CreateSpec) {
 		_node = &Pricing{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(pricing.Table, sqlgraph.NewFieldSpec(pricing.FieldID, field.TypeInt))
 	)
+	if value, ok := _c.mutation.Label(); ok {
+		_spec.SetField(pricing.FieldLabel, field.TypeString, value)
+		_node.Label = value
+	}
 	if value, ok := _c.mutation.Rate(); ok {
 		_spec.SetField(pricing.FieldRate, field.TypeString, value)
 		_node.Rate = value
@@ -171,6 +205,22 @@ func (_c *PricingCreate) createSpec() (*Pricing, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(pricingpattern.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.UsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   pricing.UsersTable,
+			Columns: []string{pricing.UsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

@@ -22,20 +22,12 @@ import (
 
 type config struct {
 	DatabaseURL string
-	AuthHashes  []string
 	CORSOrigins []string
 }
 
 func loadConfig() *config {
-	hashes := parseList(requireEnv("AUTH_CODE_HASHES"))
-	if len(hashes) == 0 {
-		slog.Error("AUTH_CODE_HASHES must contain at least one hash")
-		os.Exit(1)
-	}
-
 	return &config{
 		DatabaseURL: requireEnv("DATABASE_URL"),
-		AuthHashes:  hashes,
 		CORSOrigins: parseList(envOr("CORS_ORIGINS", "https://hashiguchip.github.io")),
 	}
 }
@@ -45,22 +37,21 @@ func loadConfig() *config {
 //
 // 順序: huma API + auth middleware → operation register → 全体を CORS でラップ。
 // CORS は preflight (OPTIONS) を扱うため最外殻に置く。
-func newServer(cfg *config, repo repository.PortfolioRepository) (http.Handler, error) {
+func newServer(cfg *config, portfolioRepo repository.PortfolioRepository, userRepo repository.UserRepository) (http.Handler, error) {
 	mux := http.NewServeMux()
 
+	// huma DefaultConfig が以下を提供する:
+	//   - /openapi.json と /openapi.yaml — live spec
+	//   - /docs — Stoplight Elements の interactive API docs
+	// commit された apps/api/openapi.yaml は review 用 contract (PR diff で
+	// 契約変更が見える)。両者は同じ huma operation 定義から派生するので必ず一致する。
 	humaConfig := huma.DefaultConfig("Resume 2026 API", "0.1.0")
-	// OpenAPI / docs endpoint は server から露出しない。
-	// 真実の出所は cmd/openapi が生成する apps/api/openapi.yaml で、PR diff
-	// として contract 変更を見れる形で repo に commit されている。
-	humaConfig.OpenAPIPath = ""
-	humaConfig.DocsPath = ""
-	humaConfig.SchemasPath = ""
 	humaConfig.CreateHooks = nil
 
 	api := humago.New(mux, humaConfig)
-	api.UseMiddleware(middleware.Auth(api, cfg.AuthHashes))
+	api.UseMiddleware(middleware.Auth(api, userRepo))
 
-	handlers.RegisterAll(api, repo)
+	handlers.RegisterAll(api, portfolioRepo)
 
 	// huma に登録されていないパスは JSON 404 にフォールバック
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
@@ -76,18 +67,17 @@ func main() {
 	// 初期接続には 10s の timeout を付ける。Postgres が落ちていると process exit。
 	initCtx, initCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer initCancel()
-	repo, err := repository.NewPostgres(initCtx, cfg.DatabaseURL)
+	client, _, closeFn, err := repository.OpenEntClient(initCtx, cfg.DatabaseURL)
 	if err != nil {
 		slog.Error("failed to init repository", "err", err)
 		os.Exit(1)
 	}
-	defer func() {
-		if err := repo.Close(); err != nil {
-			slog.Error("repo close", "err", err)
-		}
-	}()
+	defer closeFn()
 
-	handler, err := newServer(cfg, repo)
+	portfolioRepo := repository.NewPortfolioRepo(client)
+	userRepo := repository.NewUserRepo(client)
+
+	handler, err := newServer(cfg, portfolioRepo, userRepo)
 	if err != nil {
 		slog.Error("failed to build server", "err", err)
 		os.Exit(1)
