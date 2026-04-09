@@ -2,11 +2,11 @@
 
 import { Info } from "lucide-react";
 import { openModal } from "@/libs/global-modal";
-import { usePricingStore } from "@/stores/pricing";
+import { usePortfolioStore } from "@/stores/portfolio";
 import { TrialFlowModal } from "./TrialFlowModal";
 
 export function TrialBadge() {
-  const pricing = usePricingStore((s) => s.pricing);
+  const pricing = usePortfolioStore((s) => s.data?.pricing);
 
   if (!pricing) return null;
 

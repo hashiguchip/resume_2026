@@ -1,38 +1,23 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { AUTH_CODES } from "@/constants/auth";
 
-async function sha256(text: string): Promise<string> {
-  const encoded = new TextEncoder().encode(text);
-  const buf = await crypto.subtle.digest("SHA-256", encoded);
-  return Array.from(new Uint8Array(buf))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
+// 認証コードの保持のみを担う store。
+// 「認証済みかどうか」は portfolio store の data が non-null か (= API が 200 を返したか) で判定する。
+// 旧実装ではローカル SHA-256 照合で UI を切り替えていたが、データは HTML に焼かれていて
+// view-source で全部見える「演劇」だった。真実の出所を API に一本化した。
 
-interface AuthStore {
-  authenticated: boolean;
-  source: string | null;
+type AuthStore = {
   code: string | null;
-  authenticate: (code: string) => Promise<string | null>;
-  logout: () => void;
-}
+  setCode: (code: string) => void;
+  clearCode: () => void;
+};
 
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set) => ({
-      authenticated: false,
-      source: null,
       code: null,
-      authenticate: async (code: string) => {
-        const hash = await sha256(code);
-        const source = AUTH_CODES[hash] ?? null;
-        if (source) {
-          set({ authenticated: true, source, code });
-        }
-        return source;
-      },
-      logout: () => set({ authenticated: false, source: null, code: null }),
+      setCode: (code: string) => set({ code }),
+      clearCode: () => set({ code: null }),
     }),
     { name: "auth" },
   ),

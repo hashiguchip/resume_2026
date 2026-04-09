@@ -2,12 +2,12 @@
 
 import { X } from "lucide-react";
 import { closeModal } from "@/libs/global-modal";
-import { usePricingStore } from "@/stores/pricing";
+import { usePortfolioStore } from "@/stores/portfolio";
 
 export function TrialFlowModal() {
-  const pricing = usePricingStore((s) => s.pricing);
+  const pricing = usePortfolioStore((s) => s.data?.pricing);
 
-  if (!pricing) return null;
+  if (!pricing || !pricing.patterns) return null;
 
   return (
     <div role="dialog" aria-modal="true" className="w-[calc(100vw-24px)] max-w-2xl rounded-lg bg-white shadow-xl">

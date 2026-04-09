@@ -1,11 +1,11 @@
 "use client";
 
 import { DLRow } from "@/components/ui/DLRow";
-import { usePricingStore } from "@/stores/pricing";
+import { usePortfolioStore } from "@/stores/portfolio";
 import { TrialBadge } from "./TrialBadge";
 
 export function PricingRow() {
-  const pricing = usePricingStore((s) => s.pricing);
+  const pricing = usePortfolioStore((s) => s.data?.pricing);
   if (!pricing) return null;
 
   return (
