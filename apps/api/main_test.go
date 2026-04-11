@@ -67,7 +67,7 @@ func TestHealthz(t *testing.T) {
 func TestPortfolioAuth(t *testing.T) {
 	samplePortfolio := &repository.Portfolio{
 		Projects: []repository.Project{{ID: "p1", Title: "Sample"}},
-		Pricing:  repository.Pricing{Rate: "1円/h"},
+		Pricing:  &repository.Pricing{Rate: "1円/h"},
 	}
 
 	t.Run("missing code", func(t *testing.T) {
