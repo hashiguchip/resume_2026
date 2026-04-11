@@ -14,9 +14,9 @@ import (
 // main.go と cmd/openapi の両方から呼ばれる single source of truth。
 // ここに operation を追加することで自動的に live server と OpenAPI 生成の
 // 両方に反映される。
-func RegisterAll(api huma.API, repo repository.PortfolioRepository) {
+func RegisterAll(api huma.API, repo repository.AppDataRepository) {
 	registerHealthz(api)
-	RegisterPortfolio(api, repo)
+	RegisterAppData(api, repo)
 }
 
 // HealthzOutput は /healthz の response body を表す。

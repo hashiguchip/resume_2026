@@ -23,7 +23,7 @@ import (
 //   - database/sql: ent が要求する driver interface
 //   - ent: query API
 //
-// 呼び出し側 (main.go, cmd/seed) は同じ client から PortfolioRepo / UserRepo を
+// 呼び出し側 (main.go, cmd/seed) は同じ client から AppDataRepo / UserRepo を
 // 構築し、defer closeFn() で一括解放する。ctx は初期接続 (pgxpool 作成 + Ping)
 // にだけ使われ、以降の query では使われない。
 func OpenEntClient(ctx context.Context, databaseURL string) (*ent.Client, *pgxpool.Pool, func(), error) {
@@ -50,25 +50,25 @@ func OpenEntClient(ctx context.Context, databaseURL string) (*ent.Client, *pgxpo
 	return client, pool, closeFn, nil
 }
 
-// PostgresRepo は ent client を保持する PortfolioRepository 実装。
+// PostgresRepo は ent client を保持する AppDataRepository 実装。
 type PostgresRepo struct {
 	client *ent.Client
 }
 
-// NewPortfolioRepo は ent client を受け取り PortfolioRepository を返す。
+// NewAppDataRepo は ent client を受け取り AppDataRepository を返す。
 // connection の所有権は呼び出し側 (OpenEntClient の closeFn) にある。
-func NewPortfolioRepo(client *ent.Client) *PostgresRepo {
+func NewAppDataRepo(client *ent.Client) *PostgresRepo {
 	return &PostgresRepo{client: client}
 }
 
-// GetPortfolioForUser は user に紐づく pricing と全 projects を 1 まとめで返す。
+// GetAppDataForUser は user に紐づく pricing と全 projects を 1 まとめで返す。
 //
 //   - 全 user 共通: projects (display_order ASC, id ASC)
 //   - user 固有: pricing (User → Pricing edge を辿って取得、patterns 込み)
 //
 // pricing が user に紐づいてない場合は zero value を返す (auth は通っている前提
 // なので handler は 200 を返す)。
-func (r *PostgresRepo) GetPortfolioForUser(ctx context.Context, userID int) (*Portfolio, error) {
+func (r *PostgresRepo) GetAppDataForUser(ctx context.Context, userID int) (*AppData, error) {
 	projects, err := r.client.Project.Query().
 		Order(ent.Asc(project.FieldDisplayOrder), ent.Asc(project.FieldID)).
 		All(ctx)
@@ -88,7 +88,7 @@ func (r *PostgresRepo) GetPortfolioForUser(ctx context.Context, userID int) (*Po
 		return nil, fmt.Errorf("query pricing for user %d: %w", userID, err)
 	}
 
-	out := &Portfolio{
+	out := &AppData{
 		Projects: projectsToRepo(projects),
 	}
 	if pricingRow != nil {

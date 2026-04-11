@@ -11,38 +11,38 @@ import (
 	"github.com/hashiguchip/resume_2026/apps/api/internal/repository"
 )
 
-// PortfolioInput は X-Referral-Code を required として OpenAPI に露出させる。
+// AppDataInput は X-Referral-Code を required として OpenAPI に露出させる。
 // 実際の auth check は middleware.Auth が行うため、ここでの required は
 // ドキュメント / クライアント生成のための宣言の意味合いが大きい。
-type PortfolioInput struct {
+type AppDataInput struct {
 	XReferralCode string `header:"X-Referral-Code" required:"true" doc:"Pre-shared referral code"`
 }
 
-type PortfolioOutput struct {
-	Body *repository.Portfolio
+type AppDataOutput struct {
+	Body *repository.AppData
 }
 
-// RegisterPortfolio は GET /api/portfolio を huma に登録する。
+// RegisterAppData は GET /api/app-data を huma に登録する。
 //
 // middleware.Auth が認証成功時に request context に埋めた User を取り出し、
 // その user に紐づく pricing + 全 projects を返す。
-func RegisterPortfolio(api huma.API, repo repository.PortfolioRepository) {
+func RegisterAppData(api huma.API, repo repository.AppDataRepository) {
 	huma.Register(api, huma.Operation{
-		OperationID: "get-portfolio",
+		OperationID: "get-app-data",
 		Method:      http.MethodGet,
-		Path:        "/api/portfolio",
-		Summary:     "Aggregate portfolio data",
+		Path:        "/api/app-data",
+		Summary:     "Aggregate app data",
 		Description: "Returns the projects and the pricing plan associated with the authenticated user.",
 		Security:    []map[string][]string{{"referralCode": {}}},
-	}, func(ctx context.Context, _ *PortfolioInput) (*PortfolioOutput, error) {
+	}, func(ctx context.Context, _ *AppDataInput) (*AppDataOutput, error) {
 		u, ok := middleware.UserFromContext(ctx)
 		if !ok || u == nil {
 			return nil, huma.Error500InternalServerError("missing user in context")
 		}
-		p, err := repo.GetPortfolioForUser(ctx, u.ID)
+		p, err := repo.GetAppDataForUser(ctx, u.ID)
 		if err != nil {
-			return nil, huma.Error500InternalServerError("failed to load portfolio", err)
+			return nil, huma.Error500InternalServerError("failed to load app data", err)
 		}
-		return &PortfolioOutput{Body: p}, nil
+		return &AppDataOutput{Body: p}, nil
 	})
 }

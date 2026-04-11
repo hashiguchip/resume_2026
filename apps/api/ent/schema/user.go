@@ -8,7 +8,7 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// User は portfolio 閲覧 gate を通すための referral code holder。
+// User はチョクナビ閲覧 gate を通すための referral code holder。
 //
 // referral code は plaintext で保存する (このプロジェクトの脅威モデル上問題ない
 // と判断、SOPS で seed YAML が暗号化されているので at-rest は保護される)。

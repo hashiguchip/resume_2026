@@ -1,4 +1,4 @@
-# Resume 2026 - Portfolio Site
+# Resume 2026 - チョクナビ
 
 ## Overview
 

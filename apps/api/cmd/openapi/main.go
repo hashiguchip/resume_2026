@@ -31,7 +31,7 @@ import (
 	"github.com/hashiguchip/resume_2026/apps/api/internal/repository"
 )
 
-// noopRepo は PortfolioRepository を空実装で満たす dummy。
+// noopRepo は AppDataRepository を空実装で満たす dummy。
 //
 // cmd/openapi は spec 生成のために huma API を構築するだけで、
 // 実際に operation handler を呼ばない (server も起動しない)。
@@ -39,8 +39,8 @@ import (
 // 中身は使われないので zero value を返す stub で十分。
 type noopRepo struct{}
 
-func (noopRepo) GetPortfolioForUser(_ context.Context, _ int) (*repository.Portfolio, error) {
-	return &repository.Portfolio{}, nil
+func (noopRepo) GetAppDataForUser(_ context.Context, _ int) (*repository.AppData, error) {
+	return &repository.AppData{}, nil
 }
 
 func main() {

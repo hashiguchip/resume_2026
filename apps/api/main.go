@@ -37,7 +37,7 @@ func loadConfig() *config {
 //
 // 順序: huma API + auth middleware → operation register → 全体を CORS でラップ。
 // CORS は preflight (OPTIONS) を扱うため最外殻に置く。
-func newServer(cfg *config, portfolioRepo repository.PortfolioRepository, userRepo repository.UserRepository) (http.Handler, error) {
+func newServer(cfg *config, appDataRepo repository.AppDataRepository, userRepo repository.UserRepository) (http.Handler, error) {
 	mux := http.NewServeMux()
 
 	// huma DefaultConfig が以下を提供する:
@@ -51,7 +51,7 @@ func newServer(cfg *config, portfolioRepo repository.PortfolioRepository, userRe
 	api := humago.New(mux, humaConfig)
 	api.UseMiddleware(middleware.Auth(api, userRepo))
 
-	handlers.RegisterAll(api, portfolioRepo)
+	handlers.RegisterAll(api, appDataRepo)
 
 	// huma に登録されていないパスは JSON 404 にフォールバック
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
@@ -74,10 +74,10 @@ func main() {
 	}
 	defer closeFn()
 
-	portfolioRepo := repository.NewPortfolioRepo(client)
+	appDataRepo := repository.NewAppDataRepo(client)
 	userRepo := repository.NewUserRepo(client)
 
-	handler, err := newServer(cfg, portfolioRepo, userRepo)
+	handler, err := newServer(cfg, appDataRepo, userRepo)
 	if err != nil {
 		slog.Error("failed to build server", "err", err)
 		os.Exit(1)
