@@ -23,19 +23,19 @@ func (stubUserRepo) FindByCode(_ context.Context, code string) (*repository.User
 	return nil, repository.ErrUserNotFound
 }
 
-// stubRepo は in-memory な PortfolioRepository 実装 (テスト専用)。
+// stubRepo は in-memory な AppDataRepository 実装 (テスト専用)。
 type stubRepo struct {
-	portfolio *repository.Portfolio
+	appData *repository.AppData
 }
 
-func (s *stubRepo) GetPortfolioForUser(_ context.Context, _ int) (*repository.Portfolio, error) {
-	if s.portfolio == nil {
-		return &repository.Portfolio{}, nil
+func (s *stubRepo) GetAppDataForUser(_ context.Context, _ int) (*repository.AppData, error) {
+	if s.appData == nil {
+		return &repository.AppData{}, nil
 	}
-	return s.portfolio, nil
+	return s.appData, nil
 }
 
-func setupServer(t *testing.T, repo repository.PortfolioRepository) http.Handler {
+func setupServer(t *testing.T, repo repository.AppDataRepository) http.Handler {
 	t.Helper()
 	if repo == nil {
 		repo = &stubRepo{}
@@ -64,15 +64,15 @@ func TestHealthz(t *testing.T) {
 	}
 }
 
-func TestPortfolioAuth(t *testing.T) {
-	samplePortfolio := &repository.Portfolio{
+func TestAppDataAuth(t *testing.T) {
+	sampleAppData := &repository.AppData{
 		Projects: []repository.Project{{ID: "p1", Title: "Sample"}},
 		Pricing:  &repository.Pricing{Rate: "1円/h"},
 	}
 
 	t.Run("missing code", func(t *testing.T) {
-		h := setupServer(t, &stubRepo{portfolio: samplePortfolio})
-		req := httptest.NewRequest(http.MethodGet, "/api/portfolio", nil)
+		h := setupServer(t, &stubRepo{appData: sampleAppData})
+		req := httptest.NewRequest(http.MethodGet, "/api/app-data", nil)
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, req)
 		if w.Code != http.StatusUnauthorized {
@@ -81,8 +81,8 @@ func TestPortfolioAuth(t *testing.T) {
 	})
 
 	t.Run("invalid code", func(t *testing.T) {
-		h := setupServer(t, &stubRepo{portfolio: samplePortfolio})
-		req := httptest.NewRequest(http.MethodGet, "/api/portfolio", nil)
+		h := setupServer(t, &stubRepo{appData: sampleAppData})
+		req := httptest.NewRequest(http.MethodGet, "/api/app-data", nil)
 		req.Header.Set("X-Referral-Code", "wrong-code")
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, req)
@@ -92,8 +92,8 @@ func TestPortfolioAuth(t *testing.T) {
 	})
 
 	t.Run("valid code", func(t *testing.T) {
-		h := setupServer(t, &stubRepo{portfolio: samplePortfolio})
-		req := httptest.NewRequest(http.MethodGet, "/api/portfolio", nil)
+		h := setupServer(t, &stubRepo{appData: sampleAppData})
+		req := httptest.NewRequest(http.MethodGet, "/api/app-data", nil)
 		req.Header.Set("X-Referral-Code", testCode)
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, req)
@@ -101,7 +101,7 @@ func TestPortfolioAuth(t *testing.T) {
 			t.Fatalf("expected 200, got %d (body=%s)", w.Code, w.Body.String())
 		}
 
-		var p repository.Portfolio
+		var p repository.AppData
 		if err := json.Unmarshal(w.Body.Bytes(), &p); err != nil {
 			t.Fatalf("decode body: %v", err)
 		}
@@ -117,11 +117,11 @@ func TestPortfolioAuth(t *testing.T) {
 	})
 
 	t.Run("valid code without pricing", func(t *testing.T) {
-		noPricingPortfolio := &repository.Portfolio{
+		noPricingAppData := &repository.AppData{
 			Projects: []repository.Project{{ID: "p1", Title: "Sample"}},
 		}
-		h := setupServer(t, &stubRepo{portfolio: noPricingPortfolio})
-		req := httptest.NewRequest(http.MethodGet, "/api/portfolio", nil)
+		h := setupServer(t, &stubRepo{appData: noPricingAppData})
+		req := httptest.NewRequest(http.MethodGet, "/api/app-data", nil)
 		req.Header.Set("X-Referral-Code", testCode)
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, req)
@@ -129,7 +129,7 @@ func TestPortfolioAuth(t *testing.T) {
 			t.Fatalf("expected 200, got %d (body=%s)", w.Code, w.Body.String())
 		}
 
-		var p repository.Portfolio
+		var p repository.AppData
 		if err := json.Unmarshal(w.Body.Bytes(), &p); err != nil {
 			t.Fatalf("decode body: %v", err)
 		}
@@ -142,7 +142,7 @@ func TestPortfolioAuth(t *testing.T) {
 func TestCORS(t *testing.T) {
 	t.Run("preflight allowed", func(t *testing.T) {
 		h := setupServer(t, nil)
-		req := httptest.NewRequest(http.MethodOptions, "/api/portfolio", nil)
+		req := httptest.NewRequest(http.MethodOptions, "/api/app-data", nil)
 		req.Header.Set("Origin", "http://localhost:3000")
 		req.Header.Set("Access-Control-Request-Method", http.MethodGet)
 		w := httptest.NewRecorder()
@@ -161,7 +161,7 @@ func TestCORS(t *testing.T) {
 
 	t.Run("preflight disallowed origin", func(t *testing.T) {
 		h := setupServer(t, nil)
-		req := httptest.NewRequest(http.MethodOptions, "/api/portfolio", nil)
+		req := httptest.NewRequest(http.MethodOptions, "/api/app-data", nil)
 		req.Header.Set("Origin", "http://evil.example.com")
 		req.Header.Set("Access-Control-Request-Method", http.MethodGet)
 		w := httptest.NewRecorder()

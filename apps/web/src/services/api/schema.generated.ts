@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-  "/api/portfolio": {
+  "/api/app-data": {
     parameters: {
       query?: never;
       header?: never;
@@ -12,10 +12,10 @@ export interface paths {
       cookie?: never;
     };
     /**
-     * Aggregate portfolio data
+     * Aggregate app data
      * @description Returns the projects and the pricing plan associated with the authenticated user.
      */
-    get: operations["get-portfolio"];
+    get: operations["get-app-data"];
     put?: never;
     post?: never;
     delete?: never;
@@ -93,7 +93,7 @@ export interface components {
        */
       status: string;
     };
-    Portfolio: {
+    AppData: {
       pricing?: components["schemas"]["Pricing"] | null;
       projects: components["schemas"]["Project"][] | null;
     };
@@ -135,7 +135,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  "get-portfolio": {
+  "get-app-data": {
     parameters: {
       query?: never;
       header: {
@@ -153,7 +153,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["Portfolio"];
+          "application/json": components["schemas"]["AppData"];
         };
       };
       /** @description Error */

@@ -16,14 +16,14 @@ import (
 	"github.com/hashiguchip/resume_2026/apps/api/internal/repository"
 )
 
-// TestPostgresRepo_GetPortfolioForUser は本物の Postgres コンテナに対し、
-// migrations/ 配下の SQL を流し、raw SQL で投入したデータを GetPortfolioForUser
+// TestPostgresRepo_GetAppDataForUser は本物の Postgres コンテナに対し、
+// migrations/ 配下の SQL を流し、raw SQL で投入したデータを GetAppDataForUser
 // が期待どおり aggregate して返すことを検証する integration test。
 //
 // 前提:
 //   - Docker daemon が動いていること
 //   - apps/api/migrations/*.sql が存在すること (mise run ent:diff initial で生成済み)
-func TestPostgresRepo_GetPortfolioForUser(t *testing.T) {
+func TestPostgresRepo_GetAppDataForUser(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip integration test in -short mode")
 	}
@@ -41,7 +41,7 @@ func TestPostgresRepo_GetPortfolioForUser(t *testing.T) {
 		t.Fatalf("OpenEntClient: %v", err)
 	}
 	t.Cleanup(closeFn)
-	repo := repository.NewPortfolioRepo(client)
+	repo := repository.NewAppDataRepo(client)
 
 	// fixture: pricings → users → projects を raw SQL で投入
 	conn, err := pgx.Connect(ctx, dsn)
@@ -67,9 +67,9 @@ func TestPostgresRepo_GetPortfolioForUser(t *testing.T) {
 		}
 	}
 
-	got, err := repo.GetPortfolioForUser(ctx, 10)
+	got, err := repo.GetAppDataForUser(ctx, 10)
 	if err != nil {
-		t.Fatalf("GetPortfolioForUser: %v", err)
+		t.Fatalf("GetAppDataForUser: %v", err)
 	}
 
 	if len(got.Projects) != 2 {
@@ -107,9 +107,9 @@ func TestPostgresRepo_GetPortfolioForUser(t *testing.T) {
 		`INSERT INTO users (id, label, code, created_at) VALUES (11, 'bob', 'bob-code', NOW())`); err != nil {
 		t.Fatalf("insert user without pricing: %v", err)
 	}
-	gotNoPricing, err := repo.GetPortfolioForUser(ctx, 11)
+	gotNoPricing, err := repo.GetAppDataForUser(ctx, 11)
 	if err != nil {
-		t.Fatalf("GetPortfolioForUser (no pricing): %v", err)
+		t.Fatalf("GetAppDataForUser (no pricing): %v", err)
 	}
 	if gotNoPricing.Pricing != nil {
 		t.Errorf("expected pricing to be nil for user without pricing, got %+v", gotNoPricing.Pricing)
@@ -184,7 +184,7 @@ func startPostgres(t *testing.T, ctx context.Context, migrationFiles []string) s
 	t.Helper()
 	container, err := tcpostgres.Run(ctx,
 		"postgres:17-alpine",
-		tcpostgres.WithDatabase("portfolio_test"),
+		tcpostgres.WithDatabase("app_data_test"),
 		tcpostgres.WithUsername("test"),
 		tcpostgres.WithPassword("test"),
 		tcpostgres.BasicWaitStrategies(),

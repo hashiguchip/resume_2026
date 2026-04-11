@@ -1,4 +1,4 @@
-// Package repository は portfolio データの読み込み層を提供する。
+// Package repository はチョクナビの appData 読み込み層を提供する。
 //
 // scope 縮小 reframe 後、DB に置くのは「動的に変わる or user 毎に異なる」データ
 // (User, Pricing, Project) のみ。Tech / Phase / FAQ / Benefit / Requirement /
@@ -43,15 +43,15 @@ type Pricing struct {
 	Patterns     []PricingPattern `json:"patterns"`
 }
 
-// Portfolio は /api/portfolio が返す aggregate response。
+// AppData は /api/app-data が返す aggregate response。
 // User に紐づく Pricing と全 Projects のみを含む。
-type Portfolio struct {
+type AppData struct {
 	Projects []Project `json:"projects"`
 	Pricing  *Pricing  `json:"pricing"`
 }
 
-// PortfolioRepository は handler が依存する read interface。
+// AppDataRepository は handler が依存する read interface。
 // user ごとに pricing が違うため、handler 層で取り出した user ID を渡す。
-type PortfolioRepository interface {
-	GetPortfolioForUser(ctx context.Context, userID int) (*Portfolio, error)
+type AppDataRepository interface {
+	GetAppDataForUser(ctx context.Context, userID int) (*AppData, error)
 }

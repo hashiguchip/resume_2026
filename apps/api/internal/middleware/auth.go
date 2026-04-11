@@ -25,7 +25,7 @@ func UserFromContext(ctx context.Context) (*repository.User, bool) {
 // Auth は huma operation 単位の認証 middleware を返す。
 //
 // Operation.Security が空の operation (e.g. /healthz) は素通し、Security が
-// 設定されている operation (e.g. /api/portfolio) のみ X-Referral-Code を検証する。
+// 設定されている operation (e.g. /api/app-data) のみ X-Referral-Code を検証する。
 // 検証は users テーブルに対する plaintext lookup (revoked_at IS NULL 条件付き)。
 // hash 化はしない: このプロジェクトの脅威モデル上 plaintext で十分と判断した
 // (詳細は repository/user.go と README 参照)。

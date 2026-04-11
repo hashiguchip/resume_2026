@@ -10,7 +10,7 @@ import (
 	"github.com/hashiguchip/resume_2026/apps/api/ent/user"
 )
 
-// User は referral code を持つ portfolio 閲覧者。
+// User は referral code を持つチョクナビ閲覧者。
 //
 // Code は plaintext 保持。RevokedAt が non-nil なら revoke 済み (auth は通さない)。
 // FindByCode は revoke 済みを既に弾いて返すので、handler/middleware 側で

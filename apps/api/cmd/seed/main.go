@@ -2,7 +2,7 @@
 //
 // 使い方:
 //
-//	DATABASE_URL=postgres://... go run ./cmd/seed seed/portfolio.yaml
+//	DATABASE_URL=postgres://... go run ./cmd/seed seed/app-data.yaml
 //
 // 環境変数:
 //   - DATABASE_URL (必須): Postgres DSN
@@ -43,7 +43,7 @@ import (
 	"github.com/hashiguchip/resume_2026/apps/api/internal/repository"
 )
 
-// seedFile は portfolio.yaml の root 構造。
+// seedFile は app-data.yaml の root 構造。
 //
 // JSON tag ではなく yaml tag を付けること。snake_case で揃える。
 //
