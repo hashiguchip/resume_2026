@@ -8,7 +8,7 @@
 
 - Go 1.25 / [huma v2](https://huma.rocks/)
 - [ent](https://entgo.io/) + Postgres (pgxpool) + [Atlas](https://atlasgo.io/) versioned migrations
-- [SOPS](https://getsops.io/) + [age](https://github.com/FiloSottile/age) で seed データを暗号化
+- [SOPS](https://getsops.io/) binary mode + [age](https://github.com/FiloSottile/age) で seed データを暗号化
 
 ## Endpoints
 
@@ -64,8 +64,8 @@ DATABASE_URL=postgres://postgres:postgres@localhost:5432/resume_2026?sslmode=dis
 
 - ハッシュ化はしない。本サイトの脅威モデル (チョクナビ閲覧 gate) では plaintext で
   十分と判断した。流出シナリオの最悪は単価情報が見える程度で、operator が許容済み。
-- リポジトリ at-rest は `apps/api/seed/app-data.yaml` を SOPS + age で暗号化することで
-  保護する (下の Seed セクション参照)。
+- リポジトリ at-rest は `apps/api/seed/app-data.sops.bin` を SOPS binary mode + age で
+  暗号化することで保護する (下の Seed セクション参照)。
 - middleware は `users.code = $1 AND revoked_at IS NULL` で lookup する。一致した
   ユーザーは request context に格納される (`middleware.UserFromContext`)。
 - 各 user は `pricings` の 1 行に紐づく (N:1)。`/api/app-data` は context から
@@ -77,7 +77,7 @@ DATABASE_URL=postgres://postgres:postgres@localhost:5432/resume_2026?sslmode=dis
 ### ユーザー追加 / revoke
 
 ```sh
-sops apps/api/seed/app-data.yaml
+sops --input-type binary --output-type binary apps/api/seed/app-data.sops.bin
 # users: セクションに新しい label / code を追加 (revoke なら revoked_at を設定)
 mise run seed:apply
 ```
@@ -93,7 +93,9 @@ seed YAML が DB の単一 source of truth になる。
 
 ### Seed データ
 
-個人情報を含む `apps/api/seed/app-data.yaml` は **SOPS + age** で暗号化して repo に commit する。
+個人情報を含む seed は `apps/api/seed/app-data.sops.bin` として **SOPS binary mode + age** で
+暗号化して repo に commit する。binary mode はファイル全体を単一の暗号化 blob にするため、
+キー名・配列長などの構造メタデータも一切漏れない。
 復号鍵 (age private key) は開発者の dev machine だけが持つので、GitHub 上では中身を読めない。
 
 構造は `apps/api/seed/app-data.yaml.example` (平文 / commit 済み) を参照。
@@ -107,7 +109,7 @@ age-keygen -o ~/.config/age/resume_2026.key
 # → 標準出力に "Public key: age1xxxxxxxxx..." が出る
 
 # 2. .sops.yaml の age recipient を public key で置き換える
-#    (リポジトリルート /.sops.yaml の TODO 行)
+#    (リポジトリルート /.sops.yaml)
 
 # 3. SOPS が key を見つけられるよう env に export しておく
 #    (~/.zshrc などに追加)
@@ -119,14 +121,19 @@ export SOPS_AGE_KEY_FILE=~/.config/age/resume_2026.key
 #### 編集
 
 ```sh
-sops apps/api/seed/app-data.yaml
-# → 透過 decrypt → エディタで編集 → 保存時に自動 encrypt
+sops --input-type binary --output-type binary apps/api/seed/app-data.sops.bin
+# → 透過 decrypt → エディタで YAML を編集 → 保存時に自動 encrypt
 ```
 
 新しい seed ファイルを 0 から作る場合:
 ```sh
-cp apps/api/seed/app-data.yaml.example apps/api/seed/app-data.yaml
-sops -e -i apps/api/seed/app-data.yaml   # in-place encrypt
+# .example を元に平文 YAML を用意し、binary mode で暗号化
+cp apps/api/seed/app-data.yaml.example /tmp/app-data.yaml
+# /tmp/app-data.yaml を手で実データに書き換えてから:
+sops -e --input-type binary \
+  --age age1lz72v9y6qkhuy72te5q30jp05n88l0z7yp8m6vgt4nf7d0fg94tqr89rdy \
+  /tmp/app-data.yaml > apps/api/seed/app-data.sops.bin
+rm /tmp/app-data.yaml
 ```
 
 #### 投入
@@ -145,12 +152,12 @@ DATABASE_URL=<leapcell-postgres-dsn> mise run seed:apply
 
 #### key を失った場合
 
-private key を失うと暗号化された YAML は復号できない。復旧手順:
+private key を失うと暗号化されたファイルは復号できない。復旧手順:
 
 1. 新しい age key pair を生成
 2. `.sops.yaml` を新しい public key に書き換え
-3. `apps/api/seed/app-data.yaml` を `.example` から再作成し、手で実データを埋め直す
-4. `sops -e -i` で再暗号化
+3. `.example` から平文 YAML を再作成し、手で実データを埋め直す
+4. `sops -e --input-type binary --age <public-key> plain.yaml > app-data.sops.bin` で暗号化
 
 `sops updatekeys` での key rotation は、古い key で復号できる状態でしか実行できない
 ので、完全に失った場合は再作成が必要。
