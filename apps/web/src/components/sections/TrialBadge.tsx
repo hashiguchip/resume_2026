@@ -8,7 +8,7 @@ import { TrialFlowModal } from "./TrialFlowModal";
 export function TrialBadge() {
   const pricing = useAppDataStore((s) => s.data?.pricing);
 
-  if (!pricing) return null;
+  if (!pricing || pricing.trialRate === pricing.rate) return null;
 
   const handleClick = () => {
     openModal(TrialFlowModal);
