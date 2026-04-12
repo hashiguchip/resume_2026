@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { phSectionView } from "./events";
+import { posthog } from "./client";
 
 export function useSectionViewTracker(sectionIds: string[]): void {
   const viewedRef = useRef<Set<string>>(new Set());
@@ -12,7 +12,7 @@ export function useSectionViewTracker(sectionIds: string[]): void {
         for (const entry of entries) {
           if (entry.isIntersecting && !viewedRef.current.has(entry.target.id)) {
             viewedRef.current.add(entry.target.id);
-            phSectionView(entry.target.id);
+            posthog.capture("section_view", { section_id: entry.target.id });
           }
         }
       },

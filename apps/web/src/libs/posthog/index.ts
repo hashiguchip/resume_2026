@@ -1,11 +1,3 @@
-export {
-  phApplyClick,
-  phAuthSuccess,
-  phContactComplete,
-  phContactConfirm,
-  phContactSubmitError,
-  phInterestClick,
-  phSetAuthSource,
-} from "./events";
+export { posthog } from "./client";
 export { PostHogProvider } from "./PostHogProvider";
 export { useSectionViewTracker } from "./useSectionViewTracker";

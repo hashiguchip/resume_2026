@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { phApplyClick } from "@/libs/posthog";
+import { posthog } from "@/libs/posthog";
 import { showDummyPopover } from "@/utils/showDummyPopover";
 
 export function Contact() {
@@ -24,7 +24,7 @@ export function Contact() {
             </p>
             <Link
               href="/contact"
-              onClick={() => phApplyClick("footer")}
+              onClick={() => posthog.capture("apply_click", { location: "footer" })}
               className="mb-3 inline-block w-full max-w-sm rounded bg-primary-500 py-4 font-bold text-base text-white transition hover:bg-primary-700"
             >
               応募フォームへ進む
