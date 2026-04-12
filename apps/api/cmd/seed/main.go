@@ -1,15 +1,16 @@
-// Command seed は SOPS で暗号化された YAML を復号して Postgres に投入する CLI。
+// Command seed は SOPS binary mode で暗号化された seed ファイルを復号して
+// Postgres に投入する CLI。
 //
 // 使い方:
 //
-//	DATABASE_URL=postgres://... go run ./cmd/seed seed/app-data.yaml
+//	DATABASE_URL=postgres://... go run ./cmd/seed seed/app-data.sops.bin
 //
 // 環境変数:
 //   - DATABASE_URL (必須): Postgres DSN
 //   - SOPS_AGE_KEY_FILE: age private key の path (default は SOPS の探索順に従う)
 //
 // 動作:
-//  1. YAML を SOPS で復号
+//  1. SOPS binary mode で復号 (ファイル全体が単一暗号化 blob → 平文 YAML)
 //  2. seedFile struct に Unmarshal、最低限の整合性を validate
 //  3. transaction を開始
 //  4. 全テーブルを削除 → YAML の内容を insert (idempotent: 何度実行しても同じ結果)
@@ -43,7 +44,7 @@ import (
 	"github.com/hashiguchip/resume_2026/apps/api/internal/repository"
 )
 
-// seedFile は app-data.yaml の root 構造。
+// seedFile は seed YAML (app-data.sops.bin を復号した平文) の root 構造。
 //
 // JSON tag ではなく yaml tag を付けること。snake_case で揃える。
 //
@@ -114,8 +115,8 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	// 1. SOPS CLI に shell-out して復号
-	plaintext, err := decryptYAML(ctx, yamlPath)
+	// 1. SOPS binary mode で復号
+	plaintext, err := decryptSeed(ctx, yamlPath)
 	if err != nil {
 		slog.Error("decrypt seed file", "path", yamlPath, "err", err)
 		os.Exit(1)
@@ -155,20 +156,23 @@ func main() {
 	)
 }
 
-// decryptYAML は sops CLI に shell-out して暗号化された YAML を復号する。
+// decryptSeed は sops CLI (binary mode) に shell-out して seed ファイルを復号する。
+//
+// SOPS binary mode はファイル全体を単一の暗号化 blob として扱うため、
+// YAML のキー名・配列長などの構造メタデータがリポジトリ上に漏れない。
+// 復号結果は元の平文 YAML バイト列。
 //
 // SOPS の Go library (getsops/sops/v3/decrypt) を使わない理由:
 // AWS/Azure/GCP/Vault などの key provider を全部 bundle するため indirect deps
 // が ~100 増え、cmd/seed binary が ~65MB 太る。age 1 つしか使わないので
-// shell-out が圧倒的に軽い。`sops` CLI は seed 編集 (sops apps/api/seed/*.yaml)
-// にも必要なので、追加依存にはならない。
-func decryptYAML(ctx context.Context, path string) ([]byte, error) {
-	cmd := exec.CommandContext(ctx, "sops", "-d", path)
+// shell-out が圧倒的に軽い。`sops` CLI は seed 編集にも必要なので、追加依存にはならない。
+func decryptSeed(ctx context.Context, path string) ([]byte, error) {
+	cmd := exec.CommandContext(ctx, "sops", "-d", "--input-type", "binary", "--output-type", "binary", path)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("sops -d %s: %w (stderr: %s)", path, err, strings.TrimSpace(stderr.String()))
+		return nil, fmt.Errorf("sops -d (binary) %s: %w (stderr: %s)", path, err, strings.TrimSpace(stderr.String()))
 	}
 	return out, nil
 }

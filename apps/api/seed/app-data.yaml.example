@@ -1,10 +1,10 @@
 # 構造のみのサンプル seed (scope 縮小版)。
 #
-# 実データは個人情報を含むため、`apps/api/seed/app-data.yaml` (SOPS 暗号化) に
-# 別途格納する。このファイルは平文で commit され、構造のリファレンスとして使う。
+# 実データは個人情報を含むため、`apps/api/seed/app-data.sops.bin` (SOPS binary mode
+# で暗号化) に別途格納する。このファイルは平文で commit され、構造のリファレンスとして使う。
 #
 # 投入: `mise run seed:apply`
-# 編集: `sops apps/api/seed/app-data.yaml`
+# 編集: `sops --input-type binary --output-type binary apps/api/seed/app-data.sops.bin`
 #
 # DB に置くのは「動的 / user 毎に異なる」データのみ:
 #   - projects: 職務経歴 (全員共通だが id を持つので DB の方が seed しやすい)

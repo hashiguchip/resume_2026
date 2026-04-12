@@ -78,13 +78,13 @@ run = "atlas migrate apply --env local"
 dir = "apps/api"
 
 [tasks."seed:apply"]
-description = "Apply SOPS-encrypted seed YAML to DATABASE_URL"
+description = "Apply SOPS-encrypted seed to DATABASE_URL"
 # 前提:
 #   - DATABASE_URL が設定されていること
 #   - SOPS_AGE_KEY_FILE が age private key を指していること
 #     (default は ~/.config/sops/age/keys.txt)
-#   - apps/api/seed/app-data.yaml が SOPS で暗号化済みで存在すること
-run = "go run ./cmd/seed seed/app-data.yaml"
+#   - apps/api/seed/app-data.sops.bin が SOPS binary mode で暗号化済みであること
+run = "go run ./cmd/seed seed/app-data.sops.bin"
 dir = "apps/api"
 
 [tasks."codegen:api"]
