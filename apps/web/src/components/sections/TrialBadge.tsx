@@ -1,17 +1,25 @@
 "use client";
 
 import { Info } from "lucide-react";
-import { openModal } from "@/libs/global-modal";
+import { showPopover } from "@/libs/global-popover";
 import { useAppDataStore } from "@/stores/app-data";
-import { TrialFlowModal } from "./TrialFlowModal";
 
 export function TrialBadge() {
   const pricing = useAppDataStore((s) => s.data?.pricing);
 
   if (!pricing || pricing.trialRate === pricing.rate) return null;
 
-  const handleClick = () => {
-    openModal(TrialFlowModal);
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    showPopover({
+      content: (
+        <>
+          <p>トライアルの詳細は面談時にご案内します。</p>
+          <p className="mt-1 text-neutral-400">お気軽にお問い合わせください。</p>
+        </>
+      ),
+      anchor: e.currentTarget,
+      position: "bottom",
+    });
   };
 
   return (
@@ -23,7 +31,6 @@ export function TrialBadge() {
       <span>
         <span className="font-bold">トライアル:</span> 最初の更新月まで{" "}
         <span className="font-bold">{pricing.trialRate}</span> でお試しいただけます
-        <span className="ml-1 font-normal text-[11px]">（{pricing.trialNote}）</span>
       </span>
       <Info size={14} className="shrink-0 opacity-60" />
     </button>
