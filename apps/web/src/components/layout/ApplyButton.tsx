@@ -30,10 +30,11 @@ export function ApplyButton() {
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          const rootBottom = entry.rootBounds?.bottom ?? window.innerHeight;
+          // slot が 60% 以上可視なら docked、viewport に全く見えないなら floating。
+          // 上下どちらに外れても同じ扱い (scroll past、anchor jump のどちらでも矛盾なく復帰)。
           if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
             setFloating(false);
-          } else if (!entry.isIntersecting && entry.boundingClientRect.top >= rootBottom) {
+          } else if (!entry.isIntersecting) {
             setFloating(true);
           }
         }
