@@ -9,8 +9,8 @@ export function Faq() {
 
   return (
     <section className="px-5 py-8">
-      <div className="mb-2.5 font-mono text-[10px] tracking-[2px] text-primary-500">FAQ / 07</div>
-      <h3 className="mb-1.5 text-[22px] font-[800] tracking-[-0.01em] text-slate-950">よくあるご質問</h3>
+      <div className="mb-2.5 font-mono text-kicker tracking-kicker text-primary-500">FAQ / 07</div>
+      <h3 className="mb-1.5 text-heading-section font-extrabold tracking-heading text-slate-950">よくあるご質問</h3>
       <div>
         {CONTENT.faq.map((item, i) => (
           <div key={item.q} className="border-slate-200 border-b py-4">
@@ -19,7 +19,7 @@ export function Faq() {
               onClick={() => setOpenIndex(openIndex === i ? -1 : i)}
               className="flex w-full cursor-pointer items-start justify-between gap-3 text-left"
             >
-              <span className="text-sm font-semibold leading-[1.5] text-slate-950">{item.q}</span>
+              <span className="text-sm font-semibold leading-normal text-slate-950">{item.q}</span>
               <span className="mt-0.5 shrink-0 text-slate-500">{openIndex === i ? <MinusIcon /> : <PlusIcon />}</span>
             </button>
             <div
@@ -27,7 +27,7 @@ export function Faq() {
               style={{ gridTemplateRows: openIndex === i ? "1fr" : "0fr" }}
             >
               <div className="overflow-hidden">
-                <div className="pt-2.5 text-[13px] leading-[1.7] text-slate-500">{item.a}</div>
+                <div className="pt-2.5 text-body-small leading-body-compact text-slate-500">{item.a}</div>
               </div>
             </div>
           </div>
