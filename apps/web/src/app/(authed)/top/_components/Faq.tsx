@@ -19,7 +19,7 @@ export function Faq() {
               onClick={() => setOpenIndex(openIndex === i ? -1 : i)}
               className="flex w-full cursor-pointer items-start justify-between gap-3 text-left"
             >
-              <span className="text-sm font-semibold leading-[1.5] text-slate-950">{item.q}</span>
+              <span className="text-sm font-semibold leading-normal text-slate-950">{item.q}</span>
               <span className="mt-0.5 shrink-0 text-slate-500">{openIndex === i ? <MinusIcon /> : <PlusIcon />}</span>
             </button>
             <div
