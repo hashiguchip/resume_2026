@@ -3,8 +3,8 @@ import { CONTENT } from "../_constants/content";
 export function WhatWeDo() {
   return (
     <section className="px-5 py-8">
-      <div className="mb-2.5 font-mono text-[10px] tracking-[2px] text-primary-500">{CONTENT.what.kicker}</div>
-      <h2 className="mb-4 whitespace-pre-line text-[22px] font-extrabold tracking-heading text-slate-950">
+      <div className="mb-2.5 font-mono text-kicker tracking-kicker text-primary-500">{CONTENT.what.kicker}</div>
+      <h2 className="mb-4 whitespace-pre-line text-heading-section font-extrabold tracking-heading text-slate-950">
         {CONTENT.what.title}
       </h2>
       <div className="flex flex-col gap-3">

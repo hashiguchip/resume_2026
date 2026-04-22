@@ -14,8 +14,8 @@ export function Engineers() {
   return (
     <section className="py-8">
       <div className="mx-auto px-5 md:max-w-5xl lg:max-w-7xl">
-        <div className="mb-2.5 font-mono text-[10px] tracking-[2px] text-primary-500">ENGINEERS / 02</div>
-        <h3 className="mb-2 text-[22px] font-extrabold tracking-heading text-slate-950">
+        <div className="mb-2.5 font-mono text-kicker tracking-kicker text-primary-500">ENGINEERS / 02</div>
+        <h3 className="mb-2 text-heading-section font-extrabold tracking-heading text-slate-950">
           登録エンジニアはすべてミドルクラス以上
         </h3>
         <p className="mb-5 text-body-small text-slate-500">
@@ -32,7 +32,7 @@ export function Engineers() {
               >
                 <UserCircle size={48} className="mb-3 text-slate-500" />
                 <div className="mb-2 text-sm font-bold text-slate-950">{eng.name}</div>
-                <div className="text-[10px] font-semibold tracking-wider text-slate-500">保有スキル</div>
+                <div className="text-kicker font-semibold tracking-wider text-slate-500">保有スキル</div>
                 <div className="mt-1 flex flex-wrap justify-center gap-1">
                   {eng.skills.map((s) => (
                     <span

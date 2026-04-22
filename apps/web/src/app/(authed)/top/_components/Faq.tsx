@@ -9,8 +9,8 @@ export function Faq() {
 
   return (
     <section className="px-5 py-8">
-      <div className="mb-2.5 font-mono text-[10px] tracking-[2px] text-primary-500">FAQ / 07</div>
-      <h3 className="mb-1.5 text-[22px] font-extrabold tracking-heading text-slate-950">よくあるご質問</h3>
+      <div className="mb-2.5 font-mono text-kicker tracking-kicker text-primary-500">FAQ / 07</div>
+      <h3 className="mb-1.5 text-heading-section font-extrabold tracking-heading text-slate-950">よくあるご質問</h3>
       <div>
         {CONTENT.faq.map((item, i) => (
           <div key={item.q} className="border-slate-200 border-b py-4">

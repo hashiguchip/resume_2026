@@ -24,8 +24,8 @@ const STEPS = [
 export function Flow() {
   return (
     <section className="px-5 py-8">
-      <div className="mb-2.5 font-mono text-[10px] tracking-[2px] text-primary-500">FLOW / 06</div>
-      <h3 className="mb-5 text-[22px] font-extrabold tracking-heading text-slate-950">導入の流れ</h3>
+      <div className="mb-2.5 font-mono text-kicker tracking-kicker text-primary-500">FLOW / 06</div>
+      <h3 className="mb-5 text-heading-section font-extrabold tracking-heading text-slate-950">導入の流れ</h3>
       <div className="relative pl-8">
         {STEPS.map((step, i) => {
           const isLast = i === STEPS.length - 1;
