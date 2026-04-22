@@ -1,14 +1,13 @@
 import Image from "next/image";
+import heroImg from "../_assets/hero.png";
 import { CONTENT } from "../_constants/content";
 
 export function Hero() {
   return (
     <div className="relative">
       <Image
-        src="/top/hero.png"
+        src={heroImg}
         alt=""
-        width={800}
-        height={520}
         className="h-[520px] w-full object-cover object-[70%_center] lg:h-auto lg:aspect-[16/9] lg:max-h-[70vh] lg:object-[70%_30%]"
         priority
       />
