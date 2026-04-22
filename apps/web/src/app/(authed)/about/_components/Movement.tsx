@@ -7,7 +7,7 @@ export function Movement() {
       <h2 className="mb-4 text-heading-section font-extrabold tracking-heading text-slate-950">
         {CONTENT.movement.title}
       </h2>
-      <p className="text-body-small leading-[1.8] text-slate-700">{CONTENT.movement.body}</p>
+      <p className="text-body-small leading-body text-slate-700">{CONTENT.movement.body}</p>
     </section>
   );
 }

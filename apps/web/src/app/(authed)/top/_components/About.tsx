@@ -9,7 +9,7 @@ export function About() {
       <h2 className="whitespace-pre-line text-heading-large font-extrabold leading-[1.3] tracking-heading text-slate-950">
         {CONTENT.what.title}
       </h2>
-      <p className="mt-4 text-sm leading-[1.8] text-slate-700">
+      <p className="mt-4 text-sm leading-body text-slate-700">
         {CONTENT.what.body}
         <Link
           href="/about"
@@ -24,7 +24,7 @@ export function About() {
           <div
             key={s.v}
             className={clsx(
-              "rounded-[14px] p-4",
+              "rounded-card-sm p-4",
               i === 0 ? "bg-primary-500 text-white" : "border border-slate-200 bg-white text-slate-950",
             )}
           >

@@ -27,7 +27,7 @@ export function Faq() {
               style={{ gridTemplateRows: openIndex === i ? "1fr" : "0fr" }}
             >
               <div className="overflow-hidden">
-                <div className="pt-2.5 text-body-small leading-[1.7] text-slate-500">{item.a}</div>
+                <div className="pt-2.5 text-body-small leading-body-compact text-slate-500">{item.a}</div>
               </div>
             </div>
           </div>
