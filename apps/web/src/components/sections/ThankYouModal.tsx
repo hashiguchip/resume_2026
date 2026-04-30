@@ -29,7 +29,7 @@ export function ThankYouModal() {
           }}
           className="rounded bg-primary-500 px-6 py-3 font-bold text-sm text-white transition hover:bg-primary-700"
         >
-          このエンジニアに話を聞いてみる
+          まずはお気軽にご相談ください
         </a>
         <button
           type="button"

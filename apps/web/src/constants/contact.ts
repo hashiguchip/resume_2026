@@ -12,7 +12,7 @@ export const contactSchema = z.object({
   company: z.string().optional(),
   name: z.string().min(1, "ご担当者名を入力してください"),
   email: z.string().email("メールアドレスの形式が正しくありません"),
-  consultationType: z.string().min(1, "ご相談内容を選択してください"),
+  consultationType: z.string().optional(),
   message: z.string().min(10, "10文字以上で入力してください"),
   botcheck: z.boolean().optional(),
 });
