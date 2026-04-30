@@ -97,7 +97,7 @@ export function ContactFormStep({ form, onNext }: Props) {
         <div>
           <label htmlFor="consultationType" className="mb-1 block font-bold text-[13px] text-neutral-950">
             ご相談内容
-            <span className="ml-2 text-[11px] text-red-500">必須</span>
+            <span className="ml-2 font-normal text-[11px] text-neutral-500">任意</span>
           </label>
           <select
             id="consultationType"
@@ -111,7 +111,6 @@ export function ContactFormStep({ form, onNext }: Props) {
               </option>
             ))}
           </select>
-          {errors.consultationType && <p className="mt-1 text-red-500 text-xs">{errors.consultationType.message}</p>}
         </div>
 
         <div>
