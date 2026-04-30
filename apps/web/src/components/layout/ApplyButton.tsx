@@ -99,7 +99,7 @@ export function ApplyButton() {
           posthog.capture("apply_click", { location });
           posthog.capture("contact_cta_click", { location });
         }}
-        aria-label="このエンジニアに話を聞く"
+        aria-label="まずはお気軽にご相談ください"
         className={clsx(
           "flex items-center justify-center bg-primary-500 text-white transition-colors hover:bg-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2",
           floating
@@ -111,7 +111,7 @@ export function ApplyButton() {
           {floating && <MessageCircle size={18} aria-hidden="true" className="shrink-0" />}
           <span className="flex flex-col items-start leading-tight">
             {floating && <span className="font-normal text-[11px] text-white/80">条件未定でもOK</span>}
-            <span className="font-bold text-base">このエンジニアに話を聞く</span>
+            <span className="font-bold text-base">まずはお気軽にご相談ください</span>
           </span>
         </span>
       </Link>

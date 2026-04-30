@@ -65,7 +65,7 @@ export function JobHeader() {
           }}
           className="w-full rounded bg-primary-500 px-8 py-3 text-center font-bold text-[15px] text-white transition hover:bg-primary-700 sm:w-auto"
         >
-          このエンジニアに話を聞いてみる
+          まずはお気軽にご相談ください
         </a>
         <InterestButton />
       </div>

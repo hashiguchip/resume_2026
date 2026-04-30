@@ -13,7 +13,7 @@ export function Contact() {
       <div className="mx-auto max-w-[1220px]">
         <div className="rounded border border-neutral-300 bg-white text-center">
           <div className="border-neutral-200 border-b bg-primary-500 px-5 py-4">
-            <h2 className="font-bold text-lg text-white">まずは分かる範囲でご連絡ください</h2>
+            <h2 className="font-bold text-lg text-white">まずはお気軽にご相談ください</h2>
           </div>
           <div className="px-5 py-8">
             <p className="mb-6 text-neutral-800 text-sm">

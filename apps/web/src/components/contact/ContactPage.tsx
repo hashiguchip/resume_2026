@@ -32,7 +32,7 @@ export function ContactPage() {
         <div className="rounded border border-neutral-300 bg-white">
           <div className="border-neutral-200 border-b bg-primary-500 px-5 py-4">
             <h1 className="text-center font-bold text-lg text-white">
-              {step === "complete" ? "送信完了" : "まずは分かる範囲でご連絡ください"}
+              {step === "complete" ? "送信完了" : "まずはお気軽にご相談ください"}
             </h1>
           </div>
 

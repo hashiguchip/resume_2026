@@ -34,11 +34,12 @@ export function ContactConfirmStep({ form, onBack, onComplete }: Props) {
     setSubmitting(true);
     setError(null);
 
-    const { company, ...rest } = values;
+    const { company, consultationType, ...rest } = values;
     const result = await submitContact({
       access_key: env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY,
       ...rest,
       ...(company ? { company } : {}),
+      ...(consultationType ? { consultationType } : {}),
     });
 
     submittingRef.current = false;
@@ -61,7 +62,7 @@ export function ContactConfirmStep({ form, onBack, onComplete }: Props) {
       <dl className="divide-y divide-neutral-200 rounded border border-neutral-300">
         {FIELD_LABELS.map(({ key, label }) => {
           const value = values[key];
-          if (key === "company" && !value) return null;
+          if ((key === "company" || key === "consultationType") && !value) return null;
           return (
             <div key={key} className="px-4 py-3 sm:flex">
               <dt className="mb-1 font-bold text-[13px] text-neutral-950 sm:mb-0 sm:w-40 sm:shrink-0">{label}</dt>
